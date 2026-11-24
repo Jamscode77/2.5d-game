@@ -41,7 +41,8 @@ Demo encounter **Dock Ambush**: 5 enemies, 2 per wave.
 
 ## Docs
 
-- `docs/HOW_TO_BUILD.txt` — **start here**: tools, resources, full build roadmap
+- **Interactive guide:** open the *Veil Ops Build Guide* canvas in Cursor (slide deck)
+- `docs/HOW_TO_BUILD.txt` — same content as plain text backup
 - `docs/DESIGN.md` — fantasy lock
 - `docs/ARCHITECTURE.md` — system map
 - `docs/BEGINNER_GUIDE.txt` — first-run controls
