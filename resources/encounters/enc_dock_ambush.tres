@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/data/encounter_data.gd" id="1_enc"]
+
+[resource]
+script = ExtResource("1_enc")
+id = &"enc_dock_ambush"
+display_name = "Dock Ambush"
+enemy_count = 5
+enemies_per_wave = 2

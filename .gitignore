@@ -1,37 +1,29 @@
-# Unreal Engine
-Binaries/
-DerivedDataCache/
-Intermediate/
-Saved/
-Build/
+# Godot 4
+.godot/
+*.translation
+export.cfg
+export_presets.cfg
+.import/
+*.tmp
+
+# OS / editor
+.DS_Store
+Thumbs.db
 .vs/
 .vscode/
 .idea/
-*.VC.db
-*.opensdf
-*.sdf
-*.sln
-*.suo
-*.xcodeproj
-*.xcworkspace
-CompileCommands/
+*.swp
+*~
 
-# Local machine / OS
-.DS_Store
-Thumbs.db
-*.log
+# Builds
+build/
+dist/
+releases/
+*.pck
+*.zip
 
-# Packaged builds
-Releases/
-Dist/
-Pak/
-
-# Content that is regenerated or huge (keep folder structure via .gitkeep)
-*.pdb
-*.exe
-*.dll
-*.dylib
-*.so
-
-# Keep intentional placeholders
-!Content/**/.gitkeep
+# Keep Unreal archive ignored patterns unused; archive is source-only
+archive/**/Binaries/
+archive/**/DerivedDataCache/
+archive/**/Intermediate/
+archive/**/Saved/

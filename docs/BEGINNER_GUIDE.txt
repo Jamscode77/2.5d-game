@@ -1,0 +1,41 @@
+================================================================================
+  VEIL OPS — BEGINNER GUIDE (Godot 4)
+================================================================================
+
+1. Install Godot 4.3+ from https://godotengine.org
+2. Godot → Import → select this folder (project.godot)
+3. Press F5 (Play). Main scene should be scenes/main.tscn
+
+CONTROLS
+--------
+Overworld:
+  Arrow keys / UI focus   move between sectors
+  Enter                   accept mission brief (if any)
+  Space                   start contact → combat
+
+Combat:
+  F                       shoot nearest enemy
+  E                       end turn (enemies then act)
+
+WHAT YOU SHOULD SEE
+-------------------
+- Three overworld nodes on a dark plate
+- Log panel bottom-left
+- Enter combat → camera jumps to OTS-ish view
+- 5 enemies in waves of 2 (Dock Ambush)
+- Victory returns you to overworld
+
+NEXT LEARNING STEPS
+-------------------
+1. Open resources/encounters/enc_dock_ambush.tres — change enemy_count
+2. Duplicate a node on the overworld scene
+3. Import a Tripo GLB under assets/ and parent it under player_unit.tscn
+4. Read docs/ARCHITECTURE.md before adding systems
+
+AI TUTOR PROMPT
+---------------
+"I'm a beginner in Godot 4.3 working on Veil Ops. Walk me through adding
+cover that blocks shots, one step at a time. Wait for confirmation."
+
+Archived Unreal mech scaffold (unrelated): archive/mechfrontline-ue5/
+================================================================================

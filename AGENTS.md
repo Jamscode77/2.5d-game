@@ -1,20 +1,23 @@
-# Mech Frontline — agent guide
-
-Read `Docs/Prompts/AGENT_RULES.md` and `Docs/Design/DESIGN_PILLARS.md` before changing gameplay.
+# Veil Ops — agent guide
 
 ## Stack
 
-- Unreal Engine 5.5+, C++ module `MechFrontline`, Blueprints for content/tuning
-- Prefix new gameplay types with `MF` / `AMF` / `UMF` as appropriate
+- Godot **4.3+**, GDScript
+- 2.5D overworld → OTS turn-based combat → waves
+- Sci-fi imperial intelligence fantasy (original IP only)
 
 ## Do
 
-- Extend existing systems under `Source/MechFrontline/Public/{Core,Mech,Combat,Mission,AI,UI}`
-- Put authorable data in `UMFFrameDefinition` / `UMFMissionDefinition`
-- Keep tasks to one vertical slice (`Docs/Prompts/NEXT_SLICES.md`)
+- Extend existing `CombatSession`, `TurnManager`, `WaveSpawner`, `OTSCombatCamera`
+- Prefer `MissionData` / `EncounterData` resources for content
+- Keep v1 **full turn-based** unless asked for ATB
 
-## Don’t
+## Don't
 
-- Add multiplayer, online subsystems, or licensed franchise IP
-- Replace the module layout without an explicit request
-- Commit `Binaries/`, `Intermediate/`, `DerivedDataCache/`, or `Saved/`
+- Port or revive the Unreal mech project unless explicitly requested (`archive/mechfrontline-ue5/`)
+- Add multiplayer, open world, or real-time shooter controls
+- Invent licensed Final Fantasy names/assets
+
+## Playtest slice
+
+Overworld select → Space → waves → F to shoot → return on victory.

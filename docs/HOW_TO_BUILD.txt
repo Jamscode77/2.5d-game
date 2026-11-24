@@ -1,0 +1,297 @@
+================================================================================
+  VEIL OPS — HOW TO BUILD THE GAME
+  Tools · resources · step-by-step path from scaffold → playable campaign
+================================================================================
+
+  What you already have
+  ---------------------
+  A Godot 4.3 scaffold named Veil Ops:
+    - FF-style node overworld
+    - Over-the-shoulder turn-based combat
+    - Wave spawner
+    - Demo mission "Quiet Dock"
+
+  This guide tells you HOW to grow that skeleton into a real game,
+  which tools to use, and where to get help/assets.
+
+
+================================================================================
+  PART 1 — TOOLS (install these)
+================================================================================
+
+  ENGINE (required)
+  -----------------
+  Godot 4.3 or 4.4 (Standard, not .NET unless you want C#)
+    https://godotengine.org/download
+    Free. Use the same major version as project.godot (4.3).
+
+  AI TUTOR / CODER (strongly recommended)
+  ---------------------------------------
+  Cursor, ChatGPT, or Claude
+    Role: explain Godot one step at a time, debug errors, write small scripts.
+    Rule: one task per chat; paste Output errors exactly.
+
+  3D CHARACTERS / PROPS
+  ---------------------
+  Tripo (or Meshy / Rodin)
+    Role: generate sci-fi operative, enemies, crates, consoles as glTF/GLB.
+    Import into Godot: drag into assets/ → assign to unit scenes.
+
+  ANIMATION (when ready)
+  ----------------------
+  Cascadeur (free personal tier is enough to start)
+    Role: idle / aim / hit / death clips for humanoid ops.
+  Mixamo
+    Role: quick humanoid temp anims if your Tripo rig is Mixamo-compatible.
+
+  AUDIO
+  -----
+  Audacity (free) — trim SFX
+  Free libraries:
+    https://freesound.org
+    https://opengameart.org
+    Kenney.nl (UI + sci-fi packs)
+
+  2D UI / ICONS (optional)
+  ------------------------
+  Aseprite (paid) or LibreSprite (free)
+  Or keep Godot Theme defaults early
+
+  REFERENCE / MOOD
+  ----------------
+  PureRef or a folder of 10 screenshots max
+  Do NOT collect hundreds of images
+
+  VERSION CONTROL
+  ---------------
+  Git (already on this repo)
+  Commit after every working Play slice
+
+  SKIP FOR NOW
+  ------------
+  Unreal, Substance, Maya, mocap suits, custom servers
+
+
+================================================================================
+  PART 2 — LEARNING RESOURCES
+================================================================================
+
+  Official
+  --------
+  Godot 4 docs:     https://docs.godotengine.org/en/stable/
+  Your first 2D/3D: https://docs.godotengine.org/en/stable/getting_started/introduction/index.html
+  Resources:        https://docs.godotengine.org/en/stable/tutorials/scripting/resources.html
+  Signals:          https://docs.godotengine.org/en/stable/getting_started/step_by_step/signals.html
+
+  Good beginner video topics (search YouTube)
+  -------------------------------------------
+  - "Godot 4 first 3D game"
+  - "Godot 4 resources and export variables"
+  - "Godot 4 camera 3D"
+  - "Godot 4 turn based" (any simple one — then adapt to Veil Ops)
+
+  In this repo
+  ------------
+  docs/DESIGN.md           fantasy lock
+  docs/ARCHITECTURE.md     how systems connect
+  docs/BEGINNER_GUIDE.txt  first Play controls
+  AGENTS.md                rules for AI helpers
+  archive/mechfrontline-ue5/  old Unreal experiment (ignore)
+
+
+================================================================================
+  PART 3 — FIRST RUN (today)
+================================================================================
+
+  [ ] Install Godot 4.3+
+  [ ] Godot → Import → select this project folder (project.godot)
+  [ ] Press F5 / Play
+  [ ] Arrows: move sectors | Enter: accept brief | Space: start combat
+  [ ] In combat: F shoot | E end turn
+  [ ] Clear waves → return to overworld
+
+  If Play fails: open Output dock, copy the error, ask your AI tutor.
+
+
+================================================================================
+  PART 4 — BUILD ROADMAP (do in order)
+================================================================================
+
+  ----------------------------------------------------------------------
+  PHASE A — Own the scaffold                         (1–3 sessions)
+  ----------------------------------------------------------------------
+  Goals: understand files; change numbers; feel the loop.
+
+  [ ] Read docs/ARCHITECTURE.md once
+  [ ] Open resources/encounters/enc_dock_ambush.tres
+        Change enemy_count and enemies_per_wave → Play
+  [ ] Open scenes/overworld/overworld.tscn
+        Duplicate a node; rename; give it the dock encounter
+  [ ] Write your one-sentence fantasy in a notes file
+        Example: "Intel officer runs empire ops; OTS turn fights in waves."
+
+  DONE WHEN: you can change wave size without asking where the file is.
+
+
+  ----------------------------------------------------------------------
+  PHASE B — Make combat feel like YOUR game          (1–3 weeks)
+  ----------------------------------------------------------------------
+  Goals: actions, feedback, readable turns.
+
+  [ ] Add a simple AP or "one move OR one shoot" rule
+  [ ] Highlight the active unit (emissive / outline / UI arrow)
+  [ ] Show whose turn it is in the banner (already partial)
+  [ ] Add hit flash or damage number (Label3D pop is fine)
+  [ ] Tune OTSCombatCamera shoulder_offset until it feels shoulder-ish
+  [ ] Enemy AI: prefer targets in cover later; for now nearest is OK
+
+  AI prompt:
+  """
+  Godot 4.3 Veil Ops beginner. In CombatSession, help me highlight the
+  active CombatUnit and show floating damage numbers. One step at a time.
+  """
+
+  DONE WHEN: a friend understands whose turn it is without you explaining.
+
+
+  ----------------------------------------------------------------------
+  PHASE C — One real mission loop                    (2–4 weeks)
+  ----------------------------------------------------------------------
+  Goals: brief → fight → debrief feels like an op.
+
+  [ ] Write 3 mission briefs (text only) in resources/missions/
+  [ ] Add a simple Briefing UI (Panel + RichText + Accept button)
+  [ ] Add Debrief UI (success/fail + standing change)
+  [ ] Mission success only if objective met (not just "kill all")
+        e.g. survive 3 waves, or protect a console node
+  [ ] Fail state: operative HP 0 → debrief → retry node
+
+  DONE WHEN: you can play brief → combat → debrief without touching the editor.
+
+
+  ----------------------------------------------------------------------
+  PHASE D — Art pass with Tripo                      (ongoing)
+  ----------------------------------------------------------------------
+  Goals: look like sci-fi intel ops, not capsules.
+
+  [ ] Generate 1 operative + 1 enemy in Tripo (simple, readable silhouette)
+  [ ] Export GLB → assets/characters/
+  [ ] Instance into player_unit.tscn / enemy_unit.tscn (keep CombatUnit script)
+  [ ] Fix scale (human ~1.7–1.9 m)
+  [ ] Add 2–3 modular props (crate, console, barrier) for cover later
+  [ ] Optional: Cascadeur idle + aim + hit (≤5 clips)
+
+  DONE WHEN: screenshots look like your fantasy at a glance.
+
+
+  ----------------------------------------------------------------------
+  PHASE E — Cover + positioning                      (several weeks)
+  ----------------------------------------------------------------------
+  Goals: tactics, not just "shoot nearest."
+
+  [ ] Place CoverVolume markers on combat floor
+  [ ] Move action: click/select tile or snap points on the 2.5D stage
+  [ ] Shooting: line-of-sight check; cover reduces damage
+  [ ] Camera: look_at current target when aiming
+
+  DONE WHEN: standing in the open is worse than using cover.
+
+
+  ----------------------------------------------------------------------
+  PHASE F — Small campaign                           (months)
+  ----------------------------------------------------------------------
+  Goals: FF-style overworld resonance in miniature.
+
+  [ ] 5–8 overworld nodes with connections (graph travel)
+  [ ] 6–10 missions (reuse arenas with different briefs/waves)
+  [ ] 2–3 enemy types (grunt, shield, sniper)
+  [ ] Light progression (one gadget OR one passive perk)
+  [ ] Title screen + save standing (ConfigFile is enough)
+
+  DONE WHEN: a 30–45 minute playthrough exists with a beginning and end.
+
+
+  ----------------------------------------------------------------------
+  PHASE G — Polish (only after F is fun)             (ongoing)
+  ----------------------------------------------------------------------
+  [ ] SFX: shoot, hit, UI, wave start, victory
+  [ ] Music beds: overworld / combat
+  [ ] Screen shake on big hits (subtle)
+  [ ] Accessibility: remappable keys, subtitle-sized log
+  [ ] Export Windows/Linux/macOS builds from Godot
+
+
+================================================================================
+  PART 5 — WHERE TO PUT NEW CONTENT
+================================================================================
+
+  assets/characters/     Tripo GLB operatives/enemies
+  assets/props/          cover, consoles, crates
+  assets/audio/          wav/ogg
+  assets/ui/             icons
+  resources/missions/    MissionData .tres
+  resources/encounters/  EncounterData .tres
+  scenes/overworld/      map scenes
+  scenes/combat/         arenas, units
+  scenes/ui/             briefing, debrief, HUD
+  scripts/               systems only — keep content in resources/scenes
+
+
+================================================================================
+  PART 6 — AI WORKFLOW (stay unstuck)
+================================================================================
+
+  Good prompts
+  ------------
+  - Name engine + version: "Godot 4.3"
+  - Name the script: "CombatSession / WaveSpawner"
+  - One goal: "add cover damage reduction"
+  - "Beginner, one step at a time, wait for me"
+
+  Bad prompts
+  -----------
+  - "Make the whole Final Fantasy game"
+  - "Add multiplayer and crafting and ATB"
+
+  When AI is wrong
+  ----------------
+  Paste what you see in the editor + the Output error.
+  Ask: "That property doesn't exist in 4.3 — what's the 4.3 name?"
+
+
+================================================================================
+  PART 7 — COST (ballpark)
+================================================================================
+
+  Godot                          $0
+  Cursor / ChatGPT (optional)    ~$0–20 / month
+  Tripo                          free tier → paid if you iterate a lot
+  Cascadeur                      free tier to start
+  Kenney / OpenGameArt / Freesound  $0
+  PC that runs Godot             you may already own one (Godot is lighter than UE)
+
+
+================================================================================
+  PART 8 — DEFINITION OF DONE (basics)
+================================================================================
+
+  Basics complete when:
+  [ ] You can Play without fear
+  [ ] You can author a new mission .tres and hook it to a node
+  [ ] Combat has clear turns, waves, and win/lose
+  [ ] At least one Tripo character is in-game
+  [ ] You know the next Phase from this file
+
+  Then you are building a game — not "learning where the buttons are."
+
+
+================================================================================
+  START NOW
+================================================================================
+
+  1. Install Godot 4.3
+  2. Play the scaffold (Part 3)
+  3. Do Phase A only this week
+  4. Ask your AI tutor only about the single checkbox you're on
+
+================================================================================
