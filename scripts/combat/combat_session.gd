@@ -19,7 +19,7 @@ var _hovered_enemy: CombatUnit = null
 func _ready() -> void:
 	visible = false
 	set_process(false)
-	set_process_unhandled_input(false)
+	set_process_input(false)
 	wave_spawner.wave_spawned.connect(_on_wave_spawned)
 	wave_spawner.all_waves_cleared.connect(_on_all_waves_cleared)
 	EventBus.unit_defeated.connect(_on_unit_defeated)
@@ -32,12 +32,13 @@ func start_encounter(encounter: EncounterData) -> void:
 	_running = true
 	visible = true
 	set_process(true)
-	set_process_unhandled_input(true)
+	set_process_input(true)
 
 	_clear_arena_units()
 	_spawn_player()
 	camera.activate_from_session()
 	camera.set_follow_unit(_player)
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	var points: Array[Marker3D] = []
 	for child in spawn_points_root.get_children():
@@ -84,16 +85,21 @@ func _process(delta: float) -> void:
 		_player.apply_move_input(dir.normalized(), delta)
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if not _running:
 		return
 
-	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	## Use _input (not unhandled) so UI focus cannot eat mouse look.
+	if event is InputEventMouseMotion:
+		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		camera.add_mouse_look(event.relative)
+		get_viewport().set_input_as_handled()
 		return
 
 	if event.is_action_pressed("ui_cancel"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		get_viewport().set_input_as_handled()
 		return
 
 	var active := turn_manager.get_active_unit()
@@ -103,11 +109,14 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("combat_shoot"):
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			get_viewport().set_input_as_handled()
 			return
 		_player_shoot(active)
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("combat_end_turn"):
 		turn_manager.notify_action_resolved()
 		_maybe_run_enemy_turns()
+		get_viewport().set_input_as_handled()
 
 
 func _player_shoot(player: CombatUnit) -> void:
@@ -207,7 +216,7 @@ func _finish(victory: bool) -> void:
 	_running = false
 	turn_manager.stop()
 	set_process(false)
-	set_process_unhandled_input(false)
+	set_process_input(false)
 	camera.deactivate()
 	if reticle:
 		reticle.hide_reticle()

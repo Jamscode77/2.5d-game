@@ -1,31 +1,30 @@
 class_name OTSCombatCamera
 extends Camera3D
-## Over-the-shoulder camera. Mouse yaw/pitch aims the reticle (camera forward).
+## Third-person shoulder cam. Mouse orbits yaw/pitch; reticle aims down camera -Z.
 
-@export var shoulder_offset: Vector3 = Vector3(1.15, 1.55, 2.8)
-@export var follow_blend: float = 12.0
-@export var stage_forward: Vector3 = Vector3(0, 0, -1)
-@export var mouse_sensitivity: float = 0.12
-@export var pitch_min: float = -40.0
-@export var pitch_max: float = 30.0
+@export var shoulder_offset: Vector3 = Vector3(0.85, 1.45, 3.0) ## local (+X right, +Y up, +Z behind)
+@export var follow_blend: float = 14.0
+@export var mouse_sensitivity: float = 0.18
+@export var pitch_min: float = -50.0
+@export var pitch_max: float = 35.0
 
 var _anchor: Vector3 = Vector3.ZERO
-var _base_facing: Vector3 = Vector3.FORWARD
 var _active: bool = false
-var _yaw_offset_deg: float = 0.0
-var _pitch_offset_deg: float = 0.0
+var _yaw_deg: float = 0.0
+var _pitch_deg: float = -8.0
 var _follow_unit: Node3D = null
 
 
 func activate_from_session() -> void:
-	activate(GameSession.combat_anchor_position, GameSession.combat_anchor_facing)
-
-
-func activate(anchor: Vector3, facing: Vector3) -> void:
-	_anchor = anchor
-	_base_facing = facing.normalized() if facing.length() > 0.001 else stage_forward.normalized()
-	_yaw_offset_deg = 0.0
-	_pitch_offset_deg = 0.0
+	var facing := GameSession.combat_anchor_facing
+	if facing.length() < 0.001:
+		facing = Vector3(0, 0, -1)
+	facing.y = 0.0
+	facing = facing.normalized()
+	## Yaw 0 = camera behind looking toward -Z. Match session facing.
+	_yaw_deg = rad_to_deg(atan2(-facing.x, -facing.z))
+	_pitch_deg = -8.0
+	_anchor = GameSession.combat_anchor_position
 	_snap()
 	_active = true
 	current = true
@@ -39,15 +38,11 @@ func set_follow_unit(unit: Node3D) -> void:
 func add_mouse_look(relative: Vector2) -> void:
 	if not _active:
 		return
-	_yaw_offset_deg -= relative.x * mouse_sensitivity
-	_pitch_offset_deg = clampf(
-		_pitch_offset_deg - relative.y * mouse_sensitivity,
-		pitch_min,
-		pitch_max
-	)
+	_yaw_deg -= relative.x * mouse_sensitivity
+	_pitch_deg -= relative.y * mouse_sensitivity
+	_pitch_deg = clampf(_pitch_deg, pitch_min, pitch_max)
 
 
-## World-space aim direction through the reticle (camera forward).
 func get_aim_forward() -> Vector3:
 	return -global_transform.basis.z
 
@@ -76,24 +71,11 @@ func _snap() -> void:
 
 
 func _desired_pose() -> Transform3D:
-	var forward := _base_facing
-	forward.y = 0.0
-	if forward.length() < 0.001:
-		forward = stage_forward
-	forward = forward.normalized()
-
-	forward = forward.rotated(Vector3.UP, deg_to_rad(_yaw_offset_deg)).normalized()
-	var right := Vector3.UP.cross(forward).normalized()
-	if right.length() < 0.001:
-		right = Vector3.RIGHT
-
-	var look_dir := forward.rotated(right, deg_to_rad(_pitch_offset_deg)).normalized()
-	var up := look_dir.cross(right).normalized()
-	## Rebuild orthonormal basis: camera looks along look_dir (-Z).
-	right = up.cross(look_dir).normalized()
-	up = look_dir.cross(right).normalized()
-
-	var offset := right * shoulder_offset.x + Vector3.UP * shoulder_offset.y - forward * shoulder_offset.z
-	var pos := _anchor + offset
-	var target := pos + look_dir * 8.0
-	return Transform3D(Basis.looking_at(target - pos, Vector3.UP), pos)
+	var yaw := deg_to_rad(_yaw_deg)
+	var pitch := deg_to_rad(_pitch_deg)
+	## Orbit basis: yaw around world up, then pitch around local right.
+	var basis := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch)
+	var pos := _anchor + basis * shoulder_offset
+	## Camera looks along local -Z of the same basis.
+	var look_target := pos - basis.z * 8.0
+	return Transform3D(Basis.looking_at(look_target - pos, Vector3.UP), pos)

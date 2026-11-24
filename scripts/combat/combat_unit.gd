@@ -12,11 +12,10 @@ enum Team { PLAYER, ENEMY, ALLY }
 @export var attack_power: int = 3
 @export var move_range: float = 3.0
 @export var move_speed: float = 4.5
-## When false, keep authored materials (Tripo / GLB) instead of flat team tint.
 @export var apply_team_tint: bool = true
-## Added to yaw when facing aim. Mixamo/Tripo meshes often need PI.
-@export var model_yaw_offset: float = PI
-@export var face_turn_speed: float = 12.0
+## Tripo/Mixamo meshes usually face +Z at rest. Keep 0 so +Z points along aim.
+@export var model_yaw_offset: float = 0.0
+@export var face_turn_speed: float = 14.0
 
 var hp: int = 10
 var has_acted: bool = false
@@ -73,13 +72,12 @@ func deal_damage_to(target: CombatUnit) -> void:
 	has_acted = true
 
 
-## Face the horizontal direction the mouse/reticle is aiming.
+## Face the aim direction (mouse / reticle). Mesh +Z aligns with aim.
 func face_aim(aim_forward: Vector3) -> void:
 	var flat := Vector3(aim_forward.x, 0.0, aim_forward.z)
-	if flat.length() < 0.001:
+	if flat.length_squared() < 0.0001:
 		return
 	flat = flat.normalized()
-	## yaw 0 ≈ +Z; offset aligns mesh forward with aim.
 	_face_yaw = atan2(flat.x, flat.z) + model_yaw_offset
 
 
@@ -123,7 +121,7 @@ func _refresh_label() -> void:
 func _ensure_pick_body() -> void:
 	var body := StaticBody3D.new()
 	body.name = "PickBody"
-	body.collision_layer = 2 # units
+	body.collision_layer = 2
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
