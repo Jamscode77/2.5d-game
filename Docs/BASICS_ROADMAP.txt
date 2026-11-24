@@ -1,0 +1,359 @@
+================================================================================
+  MECH FRONTLINE — BASICS ROADMAP
+  Todo list · tool stack · complete beginner path
+================================================================================
+
+  Who this is for
+  ---------------
+  You have little/no game-dev experience, AI tools for help, Tripo for
+  models/rigging, and this Unreal C++ scaffold. Goal: learn the basics by
+  building a tiny Zeonic Front–inspired slice — not remaking that game.
+
+  How to use this file
+  --------------------
+  1. Install the tools in PART A.
+  2. Work PART B phases in order. Do not skip ahead.
+  3. Each phase has a DONE WHEN checklist. Stop there and playtest.
+  4. Use PART C prompts with Cursor / ChatGPT when stuck.
+  5. Keep PART D (animation) light until walking/shooting works.
+
+
+================================================================================
+  PART A — TOOL STACK (what to use for what)
+================================================================================
+
+  MUST HAVE
+  ---------
+  Epic Games Launcher + Unreal Engine 5.5+
+      Role: the game engine. Everything runs here.
+      Get: https://store.epicgames.com / Launcher → Unreal Engine
+
+  Visual Studio 2022 (Windows)  OR  Xcode (macOS)
+      Role: compile this project's C++ scaffold.
+      Windows workload: "Game development with C++"
+
+  This repo (MechFrontline)
+      Role: systems skeleton (mech, heat, mission, squad stubs).
+      Open: MechFrontline.uproject
+
+  Cursor (or ChatGPT / Claude)
+      Role: tutor + pair programmer. Explains Unreal steps, debugs errors,
+      writes small code/Blueprint instructions one step at a time.
+      Not a replacement for you clicking Play and judging feel.
+
+  STRONGLY RECOMMENDED
+  --------------------
+  Tripo
+      Role: generate mech meshes + rigging so you are not blocked on modeling.
+      Use AFTER a blockout capsule/box mech already moves (Phase 3+).
+
+  Cascadeur (free tier is enough to start)
+      Role: learn posing / simple heavy mech animation with physics assists.
+      Use when you are ready for idle/walk/fire clips (Phase 6).
+
+  PureRef or a simple reference board
+      Role: keep 5–10 screenshots of "weighty mech combat" look/feel goals.
+      Do NOT collect hundreds of images. Clarity over hoarding.
+
+  OPTIONAL LATER
+  --------------
+  Blender          — cleanup meshes, re-export FBX if Tripo needs fixes
+  Audacity         — simple SFX edits
+  Obsidian/Notion  — notes (or just a text file)
+  Mixamo           — human temp anims only; mechs often need custom/Cascadeur
+
+  SKIP FOR NOW
+  -------------
+  Substance, Maya, full mocap suits, multiplayer backends, Perforce,
+  custom engine work, marketplace "complete RPG kits"
+
+
+================================================================================
+  PART B — MASTER TODO LIST (phases)
+================================================================================
+
+  Legend: [ ] not started   [~] in progress   [x] done
+
+  --------------------------------------------------------------------------
+  PHASE 0 — Mindset & scope lock                    (1 evening)
+  --------------------------------------------------------------------------
+  [ ] Read Docs/Design/DESIGN_PILLARS.md once
+  [ ] Write your v1 fantasy in one sentence
+        Example: "Third-person heavy mech, one map, destroy the target,
+        heat matters, slow and deliberate."
+  [ ] Write NON-GOALS for v1
+        Example: no campaign menu, no 10 mechs, no multiplayer, no city open world
+  [ ] Accept v1 art can be boxes / one Tripo mesh
+
+  DONE WHEN: you can say your one-sentence fantasy out loud without adding features.
+
+
+  --------------------------------------------------------------------------
+  PHASE 1 — Machine setup                           (half day – 1 day)
+  --------------------------------------------------------------------------
+  [ ] Install Epic Launcher + UE 5.5+
+  [ ] Install VS 2022 C++ game workload  (or Xcode on Mac)
+  [ ] Clone/copy this repo to a SHORT path (e.g. C:\Dev\MechFrontline)
+  [ ] Double-click MechFrontline.uproject → compile succeeds
+  [ ] In editor: Content Browser shows Content/MechFrontline folders
+  [ ] Enable viewing C++ Classes (Content Browser settings) — see MF* types
+
+  DONE WHEN: editor opens with no compile errors.
+
+  If stuck → Docs/BEGINNER_GUIDE.txt Parts 1–3
+
+
+  --------------------------------------------------------------------------
+  PHASE 2 — First map + spawn                       (1–2 evenings)
+  --------------------------------------------------------------------------
+  [ ] Create map L_DevSandbox under Content/MechFrontline/Maps
+  [ ] Floor + lighting + Player Start above floor
+  [ ] Create BP_MF_Mech (parent: AMFMechPawn)
+  [ ] Assign ANY placeholder mesh on the Mesh component
+  [ ] Create BP_MF_GameMode (parent: AMFGameMode)
+  [ ] GameMode Default Pawn = BP_MF_Mech
+  [ ] World Settings → GameMode Override = BP_MF_GameMode
+  [ ] Press Play — you possess the pawn (even if you cannot move yet)
+
+  DONE WHEN: Play spawns your BP mech, not a flying spectator camera.
+
+  Detail steps → Docs/BEGINNER_GUIDE.txt Part 4
+
+
+  --------------------------------------------------------------------------
+  PHASE 3 — Move, look, boost                       (2–4 evenings)
+  --------------------------------------------------------------------------
+  [ ] Create Enhanced Input actions:
+        IA_Move (Axis2D), IA_Look (Axis2D),
+        IA_FirePrimary, IA_LockTarget, IA_Boost (Digital)
+  [ ] Create IMC_MF_Default — bind WASD, mouse, LMB, MMB, Shift
+  [ ] Create BP_MF_PlayerController (parent: AMFPlayerController)
+  [ ] Assign IMC + all five actions on the controller defaults
+  [ ] GameMode Player Controller Class = BP_MF_PlayerController
+  [ ] Play: WASD moves, mouse looks, Shift changes speed
+
+  DONE WHEN: you can drive the mech around the sandbox for 30 seconds
+            without touching the Content Browser.
+
+  Detail steps → Docs/BEGINNER_GUIDE.txt Parts 5–6
+
+  FEEL NOTES (write 3 bullets after playtest)
+  [ ] Too floaty / too sticky / OK?
+  [ ] Camera too close / far / OK?
+  [ ] Turn speed too snappy / sluggish / OK?
+
+
+  --------------------------------------------------------------------------
+  PHASE 4 — One gun, one enemy, one kill            (1–2 weeks part-time)
+  --------------------------------------------------------------------------
+  [ ] Create BP_Weapon_Rifle (parent: AMFWeaponBase)
+  [ ] Implement OnFired: line trace → ApplyDamage on UMFHealthComponent
+  [ ] Create DA_Frame_Scout (UMFFrameDefinition) with Primary = rifle
+  [ ] Hook frame definition onto BP_MF_Mech
+  [ ] Place a second BP_MF_Mech in level, Faction = Enemy
+  [ ] MMB lock → LMB fire → enemy hull reaches 0 → OnDestroyed logs/fires
+
+  DONE WHEN: you can kill one enemy mech intentionally in PIE.
+
+  Tutor prompt (copy/paste) is in PART C.
+
+
+  --------------------------------------------------------------------------
+  PHASE 5 — One mission win state                   (several evenings)
+  --------------------------------------------------------------------------
+  [ ] Create DA_Mission_SandboxSweep (UMFMissionDefinition)
+  [ ] One required objective: DestroyTarget
+  [ ] On enemy destroyed → MissionSubsystem.CompleteObjective
+  [ ] Show Success somehow (print string or simple UI text is fine)
+
+  DONE WHEN: kill target → mission state becomes Success every time.
+
+
+  --------------------------------------------------------------------------
+  PHASE 6 — First Tripo mech + tiny animation       (1–3 weeks)
+  --------------------------------------------------------------------------
+  ONLY start this after Phases 3–5 feel OK with placeholders.
+
+  [ ] Generate 1 mech in Tripo (simple silhouette, readable limbs)
+  [ ] Export / import into Unreal (FBX) under Content/MechFrontline/Mechs
+  [ ] Assign to BP_MF_Mech; fix scale (mech should feel large)
+  [ ] Confirm sockets/bones roughly usable (or attach weapon as child actor)
+  [ ] Learn AnimBP basics with AI tutor (idle + walk from Speed)
+  [ ] Optional: make idle/walk/fire in Cascadeur — keep under 5 clips total
+  [ ] Hook fire montage on shoot
+
+  DONE WHEN: your Tripo mesh walks with a basic idle/walk blend and fires
+            a montage without breaking movement.
+
+
+  --------------------------------------------------------------------------
+  PHASE 7 — Weight pass (the "Zeonic Front vibe" start)  (ongoing)
+  --------------------------------------------------------------------------
+  [ ] Slow acceleration / deceleration until turning feels heavy
+  [ ] Camera lag + arm length tuned while boosting
+  [ ] Heat: firing too much forces a pause
+  [ ] Enemy telegraphs attacks (even a simple windup)
+  [ ] One more mission type (Defend OR Reach) — not both yet
+
+  DONE WHEN: a friend says "this feels deliberate / heavy" without you prompting.
+
+
+  --------------------------------------------------------------------------
+  PHASE 8 — Small content pack (months, not days)
+  --------------------------------------------------------------------------
+  [ ] 3 maps OR 1 map with 3 mission scripts
+  [ ] 2 frames max
+  [ ] 3 weapons max
+  [ ] Simple briefing screen (can be Widget with text + Start button)
+  [ ] Retry on fail
+  [ ] Basic SFX (shot, hit, explosion) — free packs OK
+
+  DONE WHEN: you can play a 15–20 min loop: brief → sortie → win/lose → retry
+
+
+  --------------------------------------------------------------------------
+  PHASE 9 — Squad (optional; after Phase 7)
+  --------------------------------------------------------------------------
+  [ ] Place AMFSquadDirector
+  [ ] 1–2 ally mechs with AI controller
+  [ ] F1 Hold / F2 Attack my target / F3 Follow
+  [ ] Allies MoveTo something — dumb is OK
+
+  DONE WHEN: giving an order visibly changes ally behavior.
+
+
+================================================================================
+  PART C — HOW TO LEARN WITH AI (without getting lost)
+================================================================================
+
+  Rules for prompting
+  -------------------
+  1. One task per chat thread when possible.
+  2. Say your UE version (e.g. 5.5) and "beginner — one step at a time."
+  3. Paste exact error text from the Output Log.
+  4. After each step: you do it in editor → tell AI what happened → next step.
+  5. Never ask "build the whole game." Ask for the next DONE WHEN.
+
+  Starter prompts
+  ---------------
+
+  A) Unreal orientation
+  """
+  I'm a complete beginner on Unreal Engine 5.5 with the MechFrontline C++
+  scaffold. Walk me through creating L_DevSandbox and BP_MF_Mech step by step.
+  One step at a time. Wait for my confirmation before continuing.
+  """
+
+  B) Enhanced Input
+  """
+  Help me create IMC_MF_Default and IA_Move / IA_Look / IA_FirePrimary /
+  IA_LockTarget / IA_Boost for AMFPlayerController in UE 5.5. One step at a
+  time. I'm a beginner.
+  """
+
+  C) First weapon
+  """
+  In MechFrontline, guide me to implement BP_Weapon_Rifle : AMFWeaponBase
+  with a line trace and UMFHealthComponent ApplyDamage. UE 5.5, beginner,
+  one step at a time. Do not add new systems.
+  """
+
+  D) AnimBP basics
+  """
+  I imported a Tripo-rigged mech into UE 5.5. Teach me the smallest AnimBP
+  that blends idle and walk using Speed. One step at a time. No fancy IK yet.
+  """
+
+  E) Feel tuning
+  """
+  My mech feels floaty in UE5. Ask me 5 diagnostic questions, then suggest
+  specific Movement / SpringArm / input numbers to try. One change at a time.
+  """
+
+  When AI is wrong
+  ----------------
+  AI will invent menu names sometimes. If a button doesn't exist:
+  - Search the editor for the concept (e.g. "Mapping Context")
+  - Paste a screenshot description or the nearest menu you see
+  - Ask: "I don't see X. Here is what I see: ..."
+
+
+================================================================================
+  PART D — ANIMATION LEARNING PATH (lightweight)
+================================================================================
+
+  Order
+  -----
+  1. No custom anim — move placeholder mesh (Phases 2–5)
+  2. Watch ONE short Unreal AnimBP beginner video (official or reputable)
+  3. AI tutor: idle/walk blend only
+  4. Cascadeur: copy a walk cycle tutorial for a biped/mech-like character
+  5. Export a few frames/clips → Unreal montages
+  6. Only then: turn, boost lean, hit reaction
+
+  Minimum clip set for v1
+  -----------------------
+  idle, walk, fire, death
+  (boost can reuse walk sped up at first)
+
+  Learning goals (not mastery)
+  ----------------------------
+  [ ] I know what a Skeleton, Skeletal Mesh, and Animation Sequence are
+  [ ] I can open an AnimBP and see the Event Graph + Anim Graph
+  [ ] I can blend two poses with a Blendspace or simple Blend by bool/float
+  [ ] I can play a Montage from code/Blueprint on fire
+
+
+================================================================================
+  PART E — WEEKLY RHYTHM (part-time)
+================================================================================
+
+  Suggested cadence (adjust freely)
+  ---------------------------------
+  2–4 sessions / week, 1–2 hours each.
+
+  Example week during Phase 3–4
+  -----------------------------
+  Session 1: follow one TODO, stop at first Playtest
+  Session 2: fix what broke; write 3 feel notes
+  Session 3: ask AI only about the one blocker
+  Session 4: optional — Tripo experiment (not required yet)
+
+  Monthly review questions
+  ------------------------
+  1. What can a player DO now that they couldn't last month?
+  2. What feature did I add that I should cut?
+  3. Did I playtest more than I asset-shopped?
+
+
+================================================================================
+  PART F — DEFINITION OF "BASICS COMPLETE"
+================================================================================
+
+  You have finished the basics when ALL of these are true:
+
+  [ ] Project compiles and opens without fear
+  [ ] You can create a map, Blueprint, and Input asset without a guide open
+  [ ] You can move/look/boost a mech in PIE
+  [ ] You can kill one enemy and trigger mission Success
+  [ ] You can ask an AI tutor a precise question and apply the answer
+  [ ] You know where your next 2 weeks of work live on this roadmap
+
+  After that you are no longer "setting up." You are iterating a game.
+
+
+================================================================================
+  PART G — QUICK LINKS IN THIS REPO
+================================================================================
+
+  Docs/BEGINNER_GUIDE.txt              click-by-click Unreal assembly
+  Docs/Prompts/NEXT_SLICES.md          short implementation slices
+  Docs/Prompts/AGENT_RULES.md          rules so AI doesn't sprawl scope
+  Docs/Design/DESIGN_PILLARS.md        what "good" means for this project
+  Docs/Architecture/CLASS_RESPONSIBILITIES.md
+  README.md                            project overview
+
+
+================================================================================
+  End — start at Phase 0 tonight. Only Phase 0.
+================================================================================

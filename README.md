@@ -14,9 +14,10 @@ This repo is **scaffolding**, not a finished game: C++ framework, config, conten
 
 ## Quick start
 
-**New to Unreal?** Follow the beginner walkthrough:
+**New to Unreal?** Follow these in order:
 
-- `Docs/BEGINNER_GUIDE.txt` — plain-text, step by step
+- `Docs/BASICS_ROADMAP.txt` — todo list, tools, full beginner path (start here)
+- `Docs/BEGINNER_GUIDE.txt` — click-by-click Unreal assembly for first PIE
 
 Short version:
 
