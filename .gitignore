@@ -1,0 +1,37 @@
+# Unreal Engine
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+.vs/
+.vscode/
+.idea/
+*.VC.db
+*.opensdf
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+CompileCommands/
+
+# Local machine / OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Packaged builds
+Releases/
+Dist/
+Pak/
+
+# Content that is regenerated or huge (keep folder structure via .gitkeep)
+*.pdb
+*.exe
+*.dll
+*.dylib
+*.so
+
+# Keep intentional placeholders
+!Content/**/.gitkeep
