@@ -1,0 +1,377 @@
+================================================================================
+  MECH FRONTLINE — BEGINNER GUIDE
+  Put the scaffold together in Unreal Engine 5
+================================================================================
+
+  What this is
+  ------------
+  A step-by-step path from "I cloned the repo" to "I can walk a mech around
+  a sandbox map." Combat, missions, and squad AI come AFTER that works.
+
+  Time boxes (rough)
+  ------------------
+  Parts 1–3  Install + open project          ~30–60 min (first time)
+  Part 4     First map + mech Blueprint     ~20–40 min
+  Part 5     Input so you can move          ~20–30 min
+  Part 6     Play In Editor smoke test      ~5 min
+  Parts 7+   Optional next systems          when ready
+
+
+================================================================================
+  PART 0 — Mental model (read once)
+================================================================================
+
+  This repo is a C++ FRAMEWORK, not a finished game.
+
+  Think of it like this:
+
+    C++ classes (Source/)     = the engine rules (pawn, heat, missions…)
+    Blueprints (Content/)     = the knobs + visuals you author in the editor
+    Data assets (Data/)       = stats for frames / missions / weapons
+    Maps                      = places you play
+
+  You will NOT see a playable level until YOU create:
+    1) a map
+    2) a Blueprint mech based on AMFMechPawn
+    3) a GameMode Blueprint that uses that mech
+    4) Enhanced Input assets wired to the Player Controller
+
+  Folder cheat sheet
+  ------------------
+  MechFrontline.uproject          double-click this
+  Source/MechFrontline/           C++ code
+  Content/MechFrontline/          your art, maps, Blueprints go here
+  Config/                         project defaults
+  Docs/                           design + this guide
+
+
+================================================================================
+  PART 1 — Install the tools
+================================================================================
+
+  Windows (most common)
+  ---------------------
+  1. Install Epic Games Launcher
+     https://store.epicgames.com/en-US/download
+
+  2. In the Launcher → Unreal Engine → Library → Install Engine
+     Pick version 5.5 (or 5.4 / 5.6 and retarget later)
+
+  3. Install Visual Studio 2022 Community
+     Workloads required:
+       - "Game development with C++"
+       - Include MSVC toolchain + Windows 10/11 SDK
+
+  macOS
+  -----
+  1. Epic Launcher + UE 5.5
+  2. Xcode from the App Store
+  3. Open Xcode once to accept the license
+
+  Linux
+  -----
+  Follow Epic's Linux UE5 build docs for your distro; harder path for beginners.
+  Prefer Windows/macOS for your first compile.
+
+
+================================================================================
+  PART 2 — Get the project onto your machine
+================================================================================
+
+  1. Clone or download this repository to a SHORT path
+     Good:  C:\Dev\MechFrontline
+     Bad:   C:\Users\Very Long Name\Documents\…\tmp-…
+
+     (Unreal hates very long Windows paths.)
+
+  2. Confirm you see MechFrontline.uproject in the folder root.
+
+
+================================================================================
+  PART 3 — Open and compile
+================================================================================
+
+  1. Double-click MechFrontline.uproject
+
+  2. If Windows asks "which Unreal version?" → pick 5.5
+
+  3. If it says missing modules / needs rebuild → click Yes
+     First compile can take several minutes. Wait.
+
+  4. Editor opens. Bottom-right or Output Log should eventually show success.
+
+  If compile fails
+  ----------------
+  - Confirm VS "Game development with C++" is installed
+  - Close editor → right-click .uproject → Generate Visual Studio project files
+  - Open the .sln → build Development Editor → reopen .uproject
+  - Or run Scripts\GenerateProjectFiles.ps1 with -EngineRoot set
+
+  After a good compile you should see C++ classes in the Content Browser
+  under "C++ Classes / MechFrontline" (enable "Show C++ Classes" if needed).
+
+
+================================================================================
+  PART 4 — First map + mech (this is the big one)
+================================================================================
+
+  STEP 4A — Create the sandbox map
+  --------------------------------
+  1. Content Browser → Content/MechFrontline/Maps
+  2. Right-click → New Level / or File → New Level → Basic
+  3. Save as:  L_DevSandbox
+     Path:     Content/MechFrontline/Maps/
+
+  4. In the level, make sure you have:
+     - A floor (the Basic template already has one)
+     - A Player Start (Place Actors → search "Player Start")
+       Put it ABOVE the floor so you don't spawn underground
+     - Lighting / sky (Basic template is fine)
+
+  5. Save the level (Ctrl+S)
+
+  STEP 4B — Create the mech Blueprint
+  -----------------------------------
+  1. Content Browser → Content/MechFrontline/Blueprints/Mech
+  2. Right-click → Blueprint Class
+  3. Click ALL CLASSES → search:  MFMechPawn
+  4. Select AMFMechPawn → name it:  BP_MF_Mech
+
+  5. Open BP_MF_Mech
+  6. Select the Mesh component
+  7. For a FIRST TEST, assign ANY skeletal mesh you have
+     (Engine content / Mannequin is fine — just to SEE something)
+     Later you will replace with a tall mech mesh (~15–20m feel)
+
+  8. Compile + Save
+
+  STEP 4C — Create the GameMode Blueprint
+  ---------------------------------------
+  1. Content/MechFrontline/Blueprints/Game
+  2. Blueprint Class → search MFGameMode → AMFGameMode
+  3. Name:  BP_MF_GameMode
+  4. Open it → Class Defaults
+  5. Set Default Pawn Class → BP_MF_Mech
+  6. (Optional) Player Controller Class → leave C++ for now,
+     or create BP_MF_PlayerController in Part 5
+  7. Compile + Save
+
+  STEP 4D — Tell the map to use that GameMode
+  -------------------------------------------
+  1. Open L_DevSandbox
+  2. Window → World Settings
+  3. GameMode Override → BP_MF_GameMode
+  4. Save
+
+  STEP 4E — Quick Play test (camera only)
+  ---------------------------------------
+  Press Play (Alt+P).
+  You should spawn as the pawn. You may NOT move yet — input comes next.
+  If you fall forever: move Player Start up.
+  If you see a flying camera with no pawn: Default Pawn Class is wrong.
+
+
+================================================================================
+  PART 5 — Make WASD + mouse work (Enhanced Input)
+================================================================================
+
+  The C++ Player Controller expects Enhanced Input assets plugged into
+  its properties. You create those assets, then assign them on a BP.
+
+  STEP 5A — Create Input Actions
+  ------------------------------
+  Folder tip: Content/MechFrontline/Blueprints/Game/Input  (create if needed)
+
+  Right-click → Input → Input Action, create these:
+
+    IA_Move          Value Type: Axis2D (Vector2D)
+    IA_Look          Value Type: Axis2D (Vector2D)
+    IA_FirePrimary   Value Type: Digital (bool)
+    IA_LockTarget    Value Type: Digital (bool)
+    IA_Boost         Value Type: Digital (bool)
+
+  STEP 5B — Create the Mapping Context
+  ------------------------------------
+  Right-click → Input → Input Mapping Context → IMC_MF_Default
+
+  Open IMC_MF_Default and add mappings (approximate):
+
+    IA_Move
+      W → Modifiers: Swizzle Input Axis Values? usually map:
+          Better approach for Axis2D Move:
+          - Keyboard Keys: W/S/A/D using the "2D Vector" style
+            In UE5 IMC: add IA_Move, then add WASD as a 2D key group
+            (Add Key → W with North, S South, A West, D East —
+             or use the WASD chord UI your engine version shows)
+
+    IA_Look
+      Mouse XY 2D
+
+    IA_FirePrimary
+      Left Mouse Button
+
+    IA_LockTarget
+      Middle Mouse Button
+
+    IA_Boost
+      Left Shift
+
+  Exact IMC UI differs slightly by UE version — if stuck, search Epic docs:
+  "Enhanced Input Mapping Context"
+
+  STEP 5C — Player Controller Blueprint
+  -------------------------------------
+  1. Blueprint Class → AMFPlayerController → BP_MF_PlayerController
+     Save under Blueprints/Game
+
+  2. Open Class Defaults → category Input
+  3. Assign:
+       Default Mapping Context → IMC_MF_Default
+       Move Action             → IA_Move
+       Look Action             → IA_Look
+       Fire Primary Action     → IA_FirePrimary
+       Lock Target Action      → IA_LockTarget
+       Boost Action            → IA_Boost
+
+  4. Compile + Save
+
+  5. Open BP_MF_GameMode → set Player Controller Class
+     → BP_MF_PlayerController
+
+  6. Save everything
+
+
+================================================================================
+  PART 6 — Play In Editor checklist
+================================================================================
+
+  [ ] L_DevSandbox open
+  [ ] World Settings → GameMode Override = BP_MF_GameMode
+  [ ] BP_MF_GameMode Default Pawn = BP_MF_Mech
+  [ ] BP_MF_GameMode Player Controller = BP_MF_PlayerController
+  [ ] Input assets assigned on the controller
+  [ ] Player Start above floor
+  [ ] Press Play
+
+  Expected
+  --------
+  - Third-person-ish camera behind the mesh
+  - WASD moves
+  - Mouse looks
+  - Shift boosts (speed bump — energy meter comes later)
+
+  Not expected yet
+  ----------------
+  - Guns that damage
+  - HUD bars
+  - Mission win screen
+  - Squad AI that thinks
+
+  Those are Parts 7–9.
+
+
+================================================================================
+  PART 7 — First combat (optional next)
+================================================================================
+
+  Goal: left-click does a line trace and damages another mech's hull.
+
+  1. Create Blueprint based on AMFWeaponBase → BP_Weapon_Rifle
+  2. In Event On Fired (or override OnFired):
+       - Line Trace by Channel from camera / muzzle
+       - If hit actor has MFHealthComponent → ApplyDamage
+  3. Create Data Asset: UMFFrameDefinition → DA_Frame_Scout
+       - Set stats + Default Loadout Primary = BP_Weapon_Rifle
+  4. On BP_MF_Mech, set Frame Definition = DA_Frame_Scout
+     (or call ApplyFrameDefinition on BeginPlay)
+
+  5. Duplicate an enemy BP_MF_Mech in the level, set Faction = Enemy
+  6. PIE → Lock (MMB) → Fire (LMB) → watch hull drop (log / later HUD)
+
+
+================================================================================
+  PART 8 — First mission objective (optional)
+================================================================================
+
+  1. Data Asset UMFMissionDefinition → DA_Mission_SandboxSweep
+  2. One objective: DestroyTarget, ObjectiveId = Obj_Primary
+  3. On enemy OnDestroyed → get Mission Subsystem → CompleteObjective
+  4. Listen to OnMissionStateChanged for Success
+
+  Details: Content/MechFrontline/Data/Missions/README.md
+
+
+================================================================================
+  PART 9 — Squad orders (optional)
+================================================================================
+
+  1. Place AMFSquadDirector in the level
+  2. Place 2 ally mechs with AMFMechAIController
+  3. Register them with the director
+  4. Call IssueSquadOrder from the player controller (F1/F2/F3)
+
+  AI will only "feel real" after you add Behavior Trees / MoveTo —
+  the scaffold only receives the order.
+
+
+================================================================================
+  COMMON PROBLEMS
+================================================================================
+
+  "Project could not be compiled"
+    → Install VS C++ game workload; Generate project files; rebuild
+
+  "Map /Game/.../L_DevSandbox not found"
+    → Create and save that map; or temporarily change
+      Config/DefaultEngine.ini GameDefaultMap after the map exists
+
+  Spawn as spectator / default fly cam
+    → GameMode Override missing, or Default Pawn Class empty
+
+  Input does nothing
+    → Mapping Context / Actions not assigned on BP_MF_PlayerController
+    → Or GameMode still using raw C++ controller with null action pointers
+
+  Mesh tiny or huge
+    → Scale the mesh component; mechs should feel large vs Player Start
+
+  Stuck underground
+    → Raise Player Start; check capsule size on AMFMechPawn
+
+
+================================================================================
+  WHAT TO DO NEXT (pick ONE)
+================================================================================
+
+  A) Replace placeholder mesh with a blockout mech (boxes are fine)
+  B) Add hull / heat bars (WBP based on UMFHUDWidget)
+  C) Finish Part 7 weapon damage
+  D) Read Docs/Design/DESIGN_PILLARS.md so design stays focused
+
+  Rule of thumb: one vertical slice at a time.
+  Do not start a campaign menu before Move + Shoot + One Kill works.
+
+
+================================================================================
+  QUICK REFERENCE — important class names
+================================================================================
+
+  AMFGameMode              match / mission map rules
+  AMFPlayerController      input + HUD + squad commands
+  AMFMechPawn              the thing you pilot
+  UMFFrameDefinition       data asset: stats + loadout
+  UMFHealthComponent       hull / zones
+  UMFHeatComponent         overheat gate
+  AMFWeaponBase            gun / melee hardpoint
+  UMFMissionSubsystem      mission state machine
+  AMFSquadDirector         fans out ally orders
+  UMFHUDWidget             HUD Blueprint base
+
+
+  Full checklist prompts:  Docs/Prompts/NEXT_SLICES.md
+  Agent rules:             Docs/Prompts/AGENT_RULES.md
+  Architecture:            Docs/Architecture/CLASS_RESPONSIBILITIES.md
+
+================================================================================
+  End of guide — good luck, pilot.
+================================================================================

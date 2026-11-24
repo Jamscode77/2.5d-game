@@ -14,6 +14,12 @@ This repo is **scaffolding**, not a finished game: C++ framework, config, conten
 
 ## Quick start
 
+**New to Unreal?** Follow the beginner walkthrough:
+
+- `Docs/BEGINNER_GUIDE.txt` — plain-text, step by step
+
+Short version:
+
 1. Install Unreal Engine 5.5 from the Epic Games Launcher.
 2. Clone this repo.
 3. Double-click `MechFrontline.uproject` → **Generate** / open.
