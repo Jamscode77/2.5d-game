@@ -12,14 +12,16 @@ enum Team { PLAYER, ENEMY, ALLY }
 @export var attack_power: int = 3
 @export var move_range: float = 3.0
 @export var move_speed: float = 4.5
+## When false, keep authored materials (Tripo / GLB) instead of flat team tint.
+@export var apply_team_tint: bool = true
 
 var hp: int = 10
 var has_acted: bool = false
 var is_alive: bool = true
 var moved_this_turn: bool = false
 
-@onready var _mesh: MeshInstance3D = $MeshInstance3D
-@onready var _label: Label3D = $Label3D
+@onready var _mesh: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
+@onready var _label: Label3D = get_node_or_null("Label3D") as Label3D
 
 
 func _ready() -> void:
@@ -76,7 +78,7 @@ func _die() -> void:
 
 
 func _apply_team_color() -> void:
-	if _mesh == null:
+	if not apply_team_tint or _mesh == null:
 		return
 	var mat := StandardMaterial3D.new()
 	match team:
