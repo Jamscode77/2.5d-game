@@ -106,8 +106,8 @@
   [ ] Install Godot 4.3+
   [ ] Godot → Import → select this project folder (project.godot)
   [ ] Press F5 / Play
-  [ ] Arrows: move sectors | Enter: accept brief | Space: start combat
-  [ ] In combat: F shoot | E end turn
+  [ ] WASD: sectors | LMB: accept brief | RMB: start combat
+  [ ] In combat: WASD move | Mouse look | LMB shoot | RMB end turn
   [ ] Clear waves → return to overworld
 
   If Play fails: open Output dock, copy the error, ask your AI tutor.

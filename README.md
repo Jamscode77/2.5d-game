@@ -20,11 +20,14 @@ You play an imperial intelligence officer running missions for the empire. This 
 
 | Context | Input | Action |
 |---------|--------|--------|
-| Overworld | Arrows | Move between sectors |
-| Overworld | Enter | Accept mission brief |
-| Overworld | Space | Start contact (enter combat) |
-| Combat | **F** | Shoot nearest enemy |
-| Combat | **E** | End turn |
+| Overworld | **WASD** | Move between sectors |
+| Overworld | **LMB** | Select node + accept brief |
+| Overworld | **RMB** | Start contact (enter combat) |
+| Combat | **WASD** | Move operative |
+| Combat | **Mouse** | Look / aim |
+| Combat | **LMB** | Shoot |
+| Combat | **RMB** | End turn |
+| Combat | **Esc** | Free cursor |
 
 Demo encounter **Dock Ambush**: 5 enemies, 2 per wave.
 

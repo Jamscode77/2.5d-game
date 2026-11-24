@@ -21,7 +21,7 @@ WHAT YOU SHOULD SEE
 -------------------
 - Three overworld nodes on a dark plate
 - Log panel bottom-left
-- Enter combat → camera jumps to OTS-ish view
+- Enter combat → OTS camera + mouse look
 - 5 enemies in waves of 2 (Dock Ambush)
 - Victory returns you to overworld
 

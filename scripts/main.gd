@@ -15,8 +15,8 @@ func _ready() -> void:
 	EventBus.wave_started.connect(_on_wave_started)
 	banner.text = "VEIL OPS — scaffold"
 	_on_log("Imperial intelligence network online.")
-	_on_log("Arrows: travel  |  Enter: accept brief  |  Space: start contact")
-	_on_log("In combat: F shoot  |  E end turn")
+	_on_log("Overworld: WASD travel | LMB accept brief / click node | RMB start contact")
+	_on_log("Combat: WASD move | Mouse look | LMB shoot | RMB end turn | Esc free cursor")
 
 
 func _on_encounter_requested(encounter: EncounterData, _world_position: Vector3) -> void:
