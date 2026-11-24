@@ -66,6 +66,7 @@ func _process(delta: float) -> void:
 	if Input.is_action_pressed("move_right"):
 		dir += camera.global_transform.basis.x
 	dir.y = 0.0
+	_player.set_aim_forward(camera.get_aim_forward())
 	if dir.length() > 0.01:
 		_player.apply_move_input(dir.normalized(), delta)
 		## Keep aim point ahead of movement for OTS feel.

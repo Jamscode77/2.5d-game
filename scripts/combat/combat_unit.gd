@@ -1,6 +1,6 @@
 class_name CombatUnit
 extends Node3D
-## Minimal combatant for turn-based OTS fights. Replace mesh later (Tripo).
+## Minimal combatant for turn-based OTS fights. Supports optional MixamoLocomotion.
 
 signal defeated(unit: CombatUnit)
 
@@ -19,9 +19,12 @@ var hp: int = 10
 var has_acted: bool = false
 var is_alive: bool = true
 var moved_this_turn: bool = false
+var last_velocity: Vector3 = Vector3.ZERO
+var aim_forward: Vector3 = Vector3(0, 0, -1)
 
 @onready var _mesh: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 @onready var _label: Label3D = get_node_or_null("Label3D") as Label3D
+@onready var _locomotion: Node = get_node_or_null("MixamoLocomotion")
 
 
 func _ready() -> void:
@@ -29,6 +32,18 @@ func _ready() -> void:
 	_apply_team_color()
 	_refresh_label()
 	_ensure_pick_body()
+	_push_locomotion()
+
+
+func _physics_process(_delta: float) -> void:
+	_push_locomotion()
+	## Decay visual velocity when not moving this frame.
+	last_velocity = last_velocity.lerp(Vector3.ZERO, 0.2)
+
+
+func _push_locomotion() -> void:
+	if _locomotion and _locomotion.has_method("set_locomotion"):
+		_locomotion.call("set_locomotion", last_velocity, aim_forward)
 
 
 func begin_turn() -> void:
@@ -57,6 +72,17 @@ func deal_damage_to(target: CombatUnit) -> void:
 		return
 	target.take_damage(attack_power)
 	has_acted = true
+	if target:
+		var to_t := target.global_position - global_position
+		to_t.y = 0.0
+		if to_t.length() > 0.01:
+			aim_forward = to_t.normalized()
+
+
+func set_aim_forward(forward: Vector3) -> void:
+	var flat := Vector3(forward.x, 0.0, forward.z)
+	if flat.length() > 0.01:
+		aim_forward = flat.normalized()
 
 
 func apply_move_input(local_dir: Vector3, delta: float) -> void:
@@ -65,6 +91,8 @@ func apply_move_input(local_dir: Vector3, delta: float) -> void:
 	if local_dir.length() < 0.01:
 		return
 	var flat := Vector3(local_dir.x, 0.0, local_dir.z).normalized()
+	last_velocity = flat * move_speed
+	aim_forward = flat
 	global_position += flat * move_speed * delta
 	moved_this_turn = true
 

@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://veil_player_unit"]
+[gd_scene load_steps=4 format=3 uid="uid://veil_player_unit"]
 
 [ext_resource type="Script" path="res://scripts/combat/combat_unit.gd" id="1_unit"]
 [ext_resource type="PackedScene" uid="uid://crwqkb5juklo5" path="res://assets/characters/officer_nocrest.glb" id="2_officer"]
+[ext_resource type="Script" path="res://scripts/combat/mixamo_locomotion.gd" id="3_loco"]
 
 [node name="PlayerUnit" type="Node3D"]
 script = ExtResource("1_unit")
@@ -14,8 +15,15 @@ apply_team_tint = false
 [node name="Model" parent="." instance=ExtResource("2_officer")]
 transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, 0, 0, 0)
 
+[node name="MixamoLocomotion" type="Node" parent="."]
+script = ExtResource("3_loco")
+skeleton_path = NodePath("../Model/Armature/Skeleton3D")
+model_root_path = NodePath("../Model")
+model_yaw_offset = 3.14159
+
 [node name="Label3D" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.05, 0)
+billboard = 1
 text = "Operative"
 font_size = 48
 modulate = Color(0.9, 0.95, 1, 1)
