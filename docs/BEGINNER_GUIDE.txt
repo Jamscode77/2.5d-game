@@ -9,13 +9,16 @@
 CONTROLS
 --------
 Overworld:
-  Arrow keys / UI focus   move between sectors
-  Enter                   accept mission brief (if any)
-  Space                   start contact → combat
+  WASD                    move between sectors
+  LMB (click node)        select + accept mission brief
+  RMB                     start contact → combat
 
 Combat:
-  F                       shoot nearest enemy
-  E                       end turn (enemies then act)
+  WASD                    move operative (your turn)
+  Mouse                   look / aim (cursor captured)
+  LMB                     shoot
+  RMB                     end turn
+  Esc                     free mouse cursor
 
 WHAT YOU SHOULD SEE
 -------------------

@@ -38,8 +38,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _try_select_node_under_mouse() -> bool:
-	var hit := _ray_to_ground()
-	if hit == null:
+	var hit: Vector3 = _ray_to_ground()
+	if hit == Vector3.INF:
 		return false
 	var best_i := -1
 	var best_d := 2.5 # meters
@@ -54,15 +54,15 @@ func _try_select_node_under_mouse() -> bool:
 	return false
 
 
-func _ray_to_ground() -> Variant:
+func _ray_to_ground() -> Vector3:
 	var mouse := get_viewport().get_mouse_position()
 	var from := traversal_camera.project_ray_origin(mouse)
 	var dir := traversal_camera.project_ray_normal(mouse)
 	if absf(dir.y) < 0.0001:
-		return null
+		return Vector3.INF
 	var t := -from.y / dir.y
 	if t < 0.0:
-		return null
+		return Vector3.INF
 	return from + dir * t
 
 
