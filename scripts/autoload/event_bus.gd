@@ -1,6 +1,8 @@
 extends Node
 ## Global signals so overworld, combat, UI, and waves stay decoupled.
+## Other scripts emit/connect these via EventBus — unused-in-class warnings are expected.
 
+@warning_ignore_start("unused_signal")
 signal mission_started(mission_id: StringName)
 signal mission_completed(mission_id: StringName, success: bool)
 
@@ -14,3 +16,4 @@ signal wave_started(wave_index: int, total_waves: int)
 signal unit_defeated(unit: CombatUnit)
 
 signal log_line(text: String)
+@warning_ignore_restore("unused_signal")

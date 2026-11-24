@@ -49,11 +49,12 @@ func _spawn_wave(index: int) -> void:
 	for i in count:
 		var unit := _make_enemy(i)
 		var point := _point_for(i)
-		if point:
+		## Must enter the tree before setting global_position.
+		spawn_parent.add_child(unit)
+		if point and point.is_inside_tree():
 			unit.global_position = point.global_position
 		else:
 			unit.position = Vector3(i * 2.0, 0.0, 2.0 + index)
-		spawn_parent.add_child(unit)
 		_active_enemies.append(unit)
 		spawned.append(unit)
 

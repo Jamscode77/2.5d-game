@@ -167,7 +167,7 @@ func _maybe_run_enemy_turns() -> void:
 		if active.team == CombatUnit.Team.PLAYER:
 			_update_hud_hint()
 			break
-		await _enemy_take_turn(active)
+		_enemy_take_turn(active)
 		turn_manager.notify_action_resolved()
 		await get_tree().create_timer(0.35).timeout
 
