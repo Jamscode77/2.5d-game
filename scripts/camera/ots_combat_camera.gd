@@ -1,18 +1,16 @@
 class_name OTSCombatCamera
 extends Camera3D
-## 2.5D over-the-shoulder framing; mouse look adds yaw/pitch on top of the shoulder rig.
+## Over-the-shoulder camera. Mouse yaw/pitch aims the reticle (camera forward).
 
-@export var shoulder_offset: Vector3 = Vector3(1.1, 1.6, 3.2)
-@export var look_height: float = 1.2
-@export var follow_blend: float = 6.0
+@export var shoulder_offset: Vector3 = Vector3(1.15, 1.55, 2.8)
+@export var follow_blend: float = 12.0
 @export var stage_forward: Vector3 = Vector3(0, 0, -1)
 @export var mouse_sensitivity: float = 0.12
-@export var pitch_min: float = -35.0
-@export var pitch_max: float = 25.0
+@export var pitch_min: float = -40.0
+@export var pitch_max: float = 30.0
 
 var _anchor: Vector3 = Vector3.ZERO
-var _facing: Vector3 = Vector3.FORWARD
-var _look_target: Vector3 = Vector3.ZERO
+var _base_facing: Vector3 = Vector3.FORWARD
 var _active: bool = false
 var _yaw_offset_deg: float = 0.0
 var _pitch_offset_deg: float = 0.0
@@ -25,10 +23,9 @@ func activate_from_session() -> void:
 
 func activate(anchor: Vector3, facing: Vector3) -> void:
 	_anchor = anchor
-	_facing = facing.normalized() if facing.length() > 0.001 else stage_forward.normalized()
+	_base_facing = facing.normalized() if facing.length() > 0.001 else stage_forward.normalized()
 	_yaw_offset_deg = 0.0
 	_pitch_offset_deg = 0.0
-	_look_target = _anchor + _facing * 4.0 + Vector3.UP * look_height
 	_snap()
 	_active = true
 	current = true
@@ -37,10 +34,6 @@ func activate(anchor: Vector3, facing: Vector3) -> void:
 
 func set_follow_unit(unit: Node3D) -> void:
 	_follow_unit = unit
-
-
-func set_look_target(world_pos: Vector3) -> void:
-	_look_target = world_pos + Vector3.UP * look_height
 
 
 func add_mouse_look(relative: Vector2) -> void:
@@ -54,9 +47,13 @@ func add_mouse_look(relative: Vector2) -> void:
 	)
 
 
+## World-space aim direction through the reticle (camera forward).
 func get_aim_forward() -> Vector3:
-	var basis := global_transform.basis
-	return -basis.z
+	return -global_transform.basis.z
+
+
+func get_aim_origin() -> Vector3:
+	return global_position
 
 
 func deactivate() -> void:
@@ -79,27 +76,24 @@ func _snap() -> void:
 
 
 func _desired_pose() -> Transform3D:
-	var forward := _facing
+	var forward := _base_facing
 	forward.y = 0.0
 	if forward.length() < 0.001:
 		forward = stage_forward
 	forward = forward.normalized()
 
-	var yaw := deg_to_rad(_yaw_offset_deg)
-	forward = forward.rotated(Vector3.UP, yaw).normalized()
-
+	forward = forward.rotated(Vector3.UP, deg_to_rad(_yaw_offset_deg)).normalized()
 	var right := Vector3.UP.cross(forward).normalized()
 	if right.length() < 0.001:
 		right = Vector3.RIGHT
-	var up := forward.cross(right).normalized()
 
-	var offset := right * shoulder_offset.x + up * shoulder_offset.y - forward * shoulder_offset.z
+	var look_dir := forward.rotated(right, deg_to_rad(_pitch_offset_deg)).normalized()
+	var up := look_dir.cross(right).normalized()
+	## Rebuild orthonormal basis: camera looks along look_dir (-Z).
+	right = up.cross(look_dir).normalized()
+	up = look_dir.cross(right).normalized()
+
+	var offset := right * shoulder_offset.x + Vector3.UP * shoulder_offset.y - forward * shoulder_offset.z
 	var pos := _anchor + offset
-
-	var look_dir := forward.rotated(right, deg_to_rad(_pitch_offset_deg))
-	var target := pos + look_dir * 6.0 + Vector3.UP * (look_height * 0.15)
-	## Prefer explicit look target when set far from default (e.g. aiming at enemy).
-	if _look_target.distance_to(_anchor) > 0.5:
-		target = _look_target
-
+	var target := pos + look_dir * 8.0
 	return Transform3D(Basis.looking_at(target - pos, Vector3.UP), pos)

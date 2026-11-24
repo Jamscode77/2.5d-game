@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://veil_combat_session"]
+[gd_scene load_steps=8 format=3 uid="uid://veil_combat_session"]
 
 [ext_resource type="Script" path="res://scripts/combat/combat_session.gd" id="1_session"]
 [ext_resource type="Script" path="res://scripts/combat/turn_manager.gd" id="2_turns"]
 [ext_resource type="Script" path="res://scripts/combat/wave_spawner.gd" id="3_waves"]
 [ext_resource type="Script" path="res://scripts/camera/ots_combat_camera.gd" id="4_cam"]
+[ext_resource type="PackedScene" path="res://scenes/ui/combat_reticle.tscn" id="5_reticle"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_floor"]
 size = Vector3(24, 0.2, 14)
@@ -52,3 +53,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -2)
 
 [node name="Spawn3" type="Marker3D" parent="EnemySpawnPoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, -1)
+
+[node name="CombatUI" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="CombatReticle" parent="CombatUI" instance=ExtResource("5_reticle")]
+

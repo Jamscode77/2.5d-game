@@ -1,6 +1,6 @@
 class_name CombatUnit
 extends Node3D
-## Minimal combatant for turn-based OTS fights. Replace mesh later (Tripo).
+## Minimal combatant for turn-based OTS fights.
 
 signal defeated(unit: CombatUnit)
 
@@ -14,14 +14,19 @@ enum Team { PLAYER, ENEMY, ALLY }
 @export var move_speed: float = 4.5
 ## When false, keep authored materials (Tripo / GLB) instead of flat team tint.
 @export var apply_team_tint: bool = true
+## Added to yaw when facing aim. Mixamo/Tripo meshes often need PI.
+@export var model_yaw_offset: float = PI
+@export var face_turn_speed: float = 12.0
 
 var hp: int = 10
 var has_acted: bool = false
 var is_alive: bool = true
 var moved_this_turn: bool = false
+var _face_yaw: float = 0.0
 
 @onready var _mesh: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 @onready var _label: Label3D = get_node_or_null("Label3D") as Label3D
+@onready var _model: Node3D = get_node_or_null("Model") as Node3D
 
 
 func _ready() -> void:
@@ -29,6 +34,15 @@ func _ready() -> void:
 	_apply_team_color()
 	_refresh_label()
 	_ensure_pick_body()
+	_face_yaw = model_yaw_offset
+	if _model:
+		_model.rotation.y = _face_yaw
+
+
+func _process(delta: float) -> void:
+	if _model == null:
+		return
+	_model.rotation.y = lerp_angle(_model.rotation.y, _face_yaw, clampf(face_turn_speed * delta, 0.0, 1.0))
 
 
 func begin_turn() -> void:
@@ -57,6 +71,16 @@ func deal_damage_to(target: CombatUnit) -> void:
 		return
 	target.take_damage(attack_power)
 	has_acted = true
+
+
+## Face the horizontal direction the mouse/reticle is aiming.
+func face_aim(aim_forward: Vector3) -> void:
+	var flat := Vector3(aim_forward.x, 0.0, aim_forward.z)
+	if flat.length() < 0.001:
+		return
+	flat = flat.normalized()
+	## yaw 0 ≈ +Z; offset aligns mesh forward with aim.
+	_face_yaw = atan2(flat.x, flat.z) + model_yaw_offset
 
 
 func apply_move_input(local_dir: Vector3, delta: float) -> void:
@@ -103,10 +127,10 @@ func _ensure_pick_body() -> void:
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.4
-	capsule.height = 1.6
+	capsule.radius = 0.45
+	capsule.height = 1.7
 	shape.shape = capsule
-	shape.position = Vector3(0, 0.8, 0)
+	shape.position = Vector3(0, 0.85, 0)
 	body.add_child(shape)
 	add_child(body)
 	body.set_meta("combat_unit", self)
