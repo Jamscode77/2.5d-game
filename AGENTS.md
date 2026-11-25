@@ -21,4 +21,4 @@
 
 ## Playtest slice
 
-Walk sprite to Dock Spire → RMB combat → spend AP (WASD / LMB / R / Q / F) → RMB end turn → waves → victory returns to overworld.
+Walk sprite to Dock Spire → RMB combat → spend AP (WASD / LMB / R / Q / F / C cover) → RMB end turn → waves → victory returns to overworld.

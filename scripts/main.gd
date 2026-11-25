@@ -16,7 +16,7 @@ func _ready() -> void:
 	banner.text = "VEIL OPS — overworld"
 	_on_log("Imperial intelligence network online.")
 	_on_log("Overworld (sprites): WASD walk | near a pin: E/LMB brief | RMB enter 3D combat")
-	_on_log("Combat (AP): WASD move · LMB shoot · R reload · Q Focus · F stim · RMB end turn")
+	_on_log("Combat (AP): WASD · LMB shoot · R reload · Q Focus · F stim · C cover · RMB end")
 
 
 func _on_encounter_requested(encounter: EncounterData, _world_position: Vector3) -> void:

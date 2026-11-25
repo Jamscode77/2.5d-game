@@ -18,14 +18,18 @@ COMBAT (3D models + action points)
   Each turn you get AP (Operative: 6). Enemies get their own AP too.
   Actions spend AP; RMB ends the turn early. At 0 AP the turn ends.
 
-  WASD                    move (burns ~1 AP per 1.25m)
+  WASD                    move (burns ~1 AP per 1.25m; leaves cover)
   Mouse                   look / aim (reticle)
   LMB                     shoot under reticle (−2 AP, uses ammo)
   R                       reload magazine (−2 AP)
   Q                       Focus skill (−3 AP, next shot +2 dmg)
   F                       Field Stim gear (−2 AP, heal)
+  C                       take / leave cover (−1 AP to take)
   RMB                     end turn
   Esc                     free mouse cursor
+
+  Cover: crates/walls on the arena. Half ≈ 50% soak from the front;
+  Heavy/Full soak more. Walk around to flank and ignore their cover.
 
 WHAT YOU SHOULD SEE
 -------------------

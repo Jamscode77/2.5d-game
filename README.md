@@ -29,8 +29,11 @@ You play an imperial intelligence officer. Walk a tiny operative around sector p
 | Combat | **R** | Reload (−2 AP) |
 | Combat | **Q** | Focus skill (−3 AP, next shot +2) |
 | Combat | **F** | Field Stim (−2 AP, heal) |
+| Combat | **C** | Take / leave cover (−1 AP to take) |
 | Combat | **RMB** | End turn (also auto at 0 AP) |
 | Combat | **Esc** | Free cursor |
+
+Cover props (half / heavy / full) soak damage from the front; flank to bypass.
 
 Demo encounter **Dock Ambush**: 5 enemies, 2 per wave. Walk to **Dock Spire 4** (red pin) or **Ash Gate**.
 

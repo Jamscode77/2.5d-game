@@ -10,7 +10,8 @@ Inspired by the *structure* of Final Fantasy overworld → battle (not a Square 
 
 1. **Ops fantasy** — briefs, standing, debriefs matter as much as shooting.
 2. **OTS combat framing** — camera anchors to where you were when the fight started.
-3. **Action-point turns** — move, shoot, reload, skills, and gear each cost AP; enemies use the same rules.
+3. **Action-point turns** — move, shoot, reload, skills, gear, and cover each cost AP; enemies use the same rules.
+3b. **Directional cover** — half → full strength soaks frontal fire; flanking punishes camping.
 4. **Waves** — enemy count splits into manageable turns.
 5. **Hybrid presentation** — sprites for travel; 3D models only in combat dioramas.
 

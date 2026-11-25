@@ -1,6 +1,6 @@
 class_name CombatUnit
 extends Node3D
-## Combatant with per-turn action points (move / shoot / reload / skill / gear).
+## Combatant with per-turn action points (move / shoot / reload / skill / gear / cover).
 
 signal defeated(unit: CombatUnit)
 
@@ -23,6 +23,7 @@ enum Team { PLAYER, ENEMY, ALLY }
 @export var cost_reload: int = 2
 @export var cost_skill: int = 3
 @export var cost_equipment: int = 2
+@export var cost_take_cover: int = 1
 
 @export_group("Weapon")
 @export var magazine_size: int = 3
@@ -34,6 +35,7 @@ var has_acted: bool = false
 var is_alive: bool = true
 var moved_this_turn: bool = false
 var ammo_in_mag: int = 0
+var active_cover: CoverObject = null
 var _move_accum: float = 0.0
 var _focus_bonus: int = 0
 var _face_yaw: float = 0.0
@@ -68,7 +70,12 @@ func begin_turn() -> void:
 	ap = max_ap
 	_refresh_label()
 	EventBus.turn_started.emit(self)
-	EventBus.log_line.emit("%s turn — %d AP | mag %d/%d" % [display_name, ap, ammo_in_mag, magazine_size])
+	var cover_bit := ""
+	if active_cover:
+		cover_bit = " | %s cover" % active_cover.cover_tier_name()
+	EventBus.log_line.emit("%s turn — %d AP | mag %d/%d%s" % [
+		display_name, ap, ammo_in_mag, magazine_size, cover_bit
+	])
 
 
 func end_turn() -> void:
@@ -90,12 +97,37 @@ func spend_ap(cost: int) -> bool:
 	return true
 
 
-func take_damage(amount: int) -> void:
+func is_in_cover() -> bool:
+	return active_cover != null and is_instance_valid(active_cover)
+
+
+func take_damage(amount: int, attacker: Node3D = null) -> void:
 	if not is_alive:
 		return
-	hp = maxi(hp - amount, 0)
+	var final_amount := amount
+	if is_in_cover() and attacker != null:
+		var prot := active_cover.protection_factor(self, attacker)
+		if prot > 0.01:
+			var reduced := int(round(float(amount) * (1.0 - prot)))
+			## Full frontal cover can null a weak hit; leave chip only if any damage survives.
+			final_amount = maxi(reduced, 0)
+			if final_amount < amount:
+				EventBus.log_line.emit(
+					"%s cover (%s, %.0f%%) soaks %d → %d" % [
+						display_name,
+						active_cover.cover_tier_name(),
+						prot * 100.0,
+						amount,
+						final_amount,
+					]
+				)
+			if final_amount <= 0:
+				EventBus.log_line.emit("%s — shot stopped by cover." % display_name)
+				_refresh_label()
+				return
+	hp = maxi(hp - final_amount, 0)
 	_refresh_label()
-	EventBus.log_line.emit("%s takes %d damage (%d/%d)" % [display_name, amount, hp, max_hp])
+	EventBus.log_line.emit("%s takes %d damage (%d/%d)" % [display_name, final_amount, hp, max_hp])
 	if hp <= 0:
 		_die()
 
@@ -109,15 +141,16 @@ func face_aim(aim_forward: Vector3) -> void:
 	_face_yaw = atan2(flat.x, flat.z) + model_yaw_offset
 
 
-## Continuous move; burns 1 AP every meters_per_ap traveled.
+## Continuous move; burns 1 AP every meters_per_ap traveled. Breaks cover.
 func apply_move_input(local_dir: Vector3, delta: float) -> void:
 	if not is_alive or ap <= 0:
 		return
 	if local_dir.length() < 0.01:
 		return
+	if is_in_cover():
+		leave_cover(true)
 	var flat := Vector3(local_dir.x, 0.0, local_dir.z).normalized()
 	var step := move_speed * delta
-	## Cap step if remaining AP can't cover a full meter chunk.
 	var remaining_budget := float(ap) * meters_per_ap - _move_accum
 	if remaining_budget <= 0.0:
 		return
@@ -139,6 +172,8 @@ func try_move_toward(target_pos: Vector3, distance: float) -> bool:
 	if flat.length_squared() < 0.0001:
 		return false
 	flat = flat.normalized()
+	if is_in_cover():
+		leave_cover(true)
 	var step := minf(distance, float(ap) * meters_per_ap)
 	var cost := maxi(1, int(ceili(step / meters_per_ap)))
 	if not spend_ap(cost):
@@ -163,7 +198,7 @@ func try_shoot(target: CombatUnit) -> bool:
 	if _focus_bonus > 0:
 		EventBus.log_line.emit("%s fires with Focus (+%d)." % [display_name, _focus_bonus])
 		_focus_bonus = 0
-	target.take_damage(dmg)
+	target.take_damage(dmg, self)
 	_refresh_label()
 	return true
 
@@ -219,7 +254,61 @@ func try_equipment_stim() -> bool:
 	return true
 
 
+## Take or leave the nearest usable cover (C). Leaving is free; taking costs AP.
+func try_toggle_cover(covers: Array[CoverObject]) -> bool:
+	if is_in_cover():
+		leave_cover(true)
+		return true
+	var best: CoverObject = null
+	var best_d := INF
+	for c in covers:
+		if c == null or not c.can_unit_take(self):
+			continue
+		var d := global_position.distance_to(c.occupy_global())
+		if d < best_d:
+			best_d = d
+			best = c
+	if best == null:
+		EventBus.log_line.emit("%s — no cover in reach. Move next to a crate/wall." % display_name)
+		return false
+	return try_take_cover(best)
+
+
+func try_take_cover(cover: CoverObject) -> bool:
+	if cover == null or not cover.can_unit_take(self):
+		EventBus.log_line.emit("%s — cannot take that cover." % display_name)
+		return false
+	if is_in_cover() and active_cover == cover:
+		return false
+	if not spend_ap(cost_take_cover):
+		EventBus.log_line.emit("%s — need %d AP to take cover." % [display_name, cost_take_cover])
+		return false
+	if is_in_cover():
+		leave_cover(false)
+	active_cover = cover
+	cover.claim(self)
+	global_position = cover.occupy_global()
+	## Face the threat side of the cover.
+	face_aim(cover.threat_normal())
+	EventBus.log_line.emit("%s takes %s cover (−%d AP)." % [
+		display_name, cover.cover_tier_name(), cost_take_cover
+	])
+	_refresh_label()
+	return true
+
+
+func leave_cover(announce: bool = true) -> void:
+	if not is_in_cover():
+		return
+	active_cover.release(self)
+	active_cover = null
+	if announce:
+		EventBus.log_line.emit("%s leaves cover." % display_name)
+	_refresh_label()
+
+
 func _die() -> void:
+	leave_cover(false)
 	is_alive = false
 	visible = false
 	defeated.emit(self)
@@ -242,10 +331,14 @@ func _apply_team_color() -> void:
 
 
 func _refresh_label() -> void:
-	if _label:
-		_label.text = "%s\n%d/%d HP · %d AP\n%d/%d ammo" % [
-			display_name, hp, max_hp, ap, ammo_in_mag, magazine_size
-		]
+	if _label == null:
+		return
+	var cover_line := ""
+	if is_in_cover():
+		cover_line = "\n[%s cover]" % active_cover.cover_tier_name()
+	_label.text = "%s\n%d/%d HP · %d AP\n%d/%d ammo%s" % [
+		display_name, hp, max_hp, ap, ammo_in_mag, magazine_size, cover_line
+	]
 
 
 func _ensure_pick_body() -> void:

@@ -26,12 +26,18 @@ EventBus.combat_ended → show overworld sprites again
 
 | Action | Cost | Notes |
 |--------|------|-------|
-| Move | 1 AP / 1.25 m | Continuous WASD for player; stepped for AI |
-| Shoot | 2 AP | Needs ammo in magazine |
+| Move | 1 AP / 1.25 m | Continuous WASD for player; stepped for AI; breaks cover |
+| Shoot | 2 AP | Needs ammo; damage reduced by target cover |
 | Reload | 2 AP | Fills mag from reserve |
 | Focus (skill) | 3 AP | Next shot +2 damage |
 | Field Stim (gear) | 2 AP | Heal up to 3 HP |
+| Take / leave cover | 1 AP / free | **C** near a cover prop; leave is free |
 | End turn | — | RMB, or auto when AP hits 0 after an action |
+
+### Cover protection
+
+`CoverObject.cover_strength` is continuous (0→1). Tiers: Light / Half (~0.5) / Heavy (~0.75) / Full (1.0).
+Protection scales by strength × how frontal the attacker is relative to the cover’s threat face (−Z). Flanking nearly ignores cover; full frontal full-cover can null a shot.
 
 ## Key scripts
 
@@ -46,7 +52,8 @@ EventBus.combat_ended → show overworld sprites again
 | `TurnManager` | Initiative order |
 | `WaveSpawner` | Wave splits |
 | `OTSCombatCamera` | Shoulder rig |
-| `CombatUnit` | HP, AP, ammo, skills/gear |
+| `CombatUnit` | HP, AP, ammo, skills/gear/cover |
+| `CoverObject` | Strength, occupancy, directional soak |
 | `MissionData` / `EncounterData` | Authorable resources |
 
 ## Extension points
