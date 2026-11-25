@@ -15,6 +15,11 @@ display_name = "Hostile"
 team = 1
 max_hp = 8
 attack_power = 2
+max_ap = 4
+magazine_size = 2
+reserve_ammo = 6
+cost_shoot = 2
+cost_reload = 2
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)

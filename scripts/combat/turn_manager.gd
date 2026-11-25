@@ -1,6 +1,6 @@
 class_name TurnManager
 extends Node
-## Pure turn-based initiative: player units then enemies, repeat.
+## Turn initiative. Each unit gets a full AP pool on begin_turn; end_turn when they pass.
 
 var _units: Array[CombatUnit] = []
 var _index: int = -1

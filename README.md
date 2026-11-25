@@ -1,10 +1,10 @@
 # Veil Ops
 
-Godot 4 **scaffold** for a 2.5D sci-fi intel game:
+Godot 4 scaffold for a sci-fi intel game with a **Final Fantasy–style split**:
 
-**FF-style overworld → over-the-shoulder turn-based combat → waves**
+**Little sprites on the overworld → 3D models in OTS turn-based combat (waves)**
 
-You play an imperial intelligence officer running missions for the empire. This repo is a playable skeleton (capsules, one demo op), not a finished game.
+You play an imperial intelligence officer. Walk a tiny operative around sector pins, take briefs, then drop into over-the-shoulder combat with the Tripo officer model.
 
 ## Requirements
 
@@ -20,36 +20,39 @@ You play an imperial intelligence officer running missions for the empire. This 
 
 | Context | Input | Action |
 |---------|--------|--------|
-| Overworld | **WASD** | Move between sectors |
-| Overworld | **LMB** | Select node + accept brief |
-| Overworld | **RMB** | Start contact (enter combat) |
-| Combat | **WASD** | Move operative |
-| Combat | **Mouse** | Look / aim |
-| Combat | **LMB** | Shoot |
-| Combat | **RMB** | End turn |
+| Overworld (sprites) | **WASD** | Walk the little operative |
+| Overworld | **E** / **LMB** | Accept brief when near a pin |
+| Overworld | **RMB** | Enter **3D combat** near a hostile pin |
+| Combat (3D + AP) | **WASD** | Move (~1 AP / 1.25 m) |
+| Combat | **Mouse** | Look / aim (reticle) |
+| Combat | **LMB** | Shoot (−2 AP, needs ammo) |
+| Combat | **R** | Reload (−2 AP) |
+| Combat | **Q** | Focus skill (−3 AP, next shot +2) |
+| Combat | **F** | Field Stim (−2 AP, heal) |
+| Combat | **RMB** | End turn (also auto at 0 AP) |
 | Combat | **Esc** | Free cursor |
 
-Demo encounter **Dock Ambush**: 5 enemies, 2 per wave.
+Demo encounter **Dock Ambush**: 5 enemies, 2 per wave. Walk to **Dock Spire 4** (red pin) or **Ash Gate**.
 
 ## What's scaffolded
 
-- `GameSession` + `EventBus` autoloads
-- Node overworld with mission/encounter resources
-- `CombatSession` with `TurnManager` + `WaveSpawner`
-- `OTSCombatCamera` framed from combat-start position
+- Sprite overworld (`OverworldPlayer` + map pins) with proximity interact
+- 3D `CombatSession` with **action points** (move / shoot / reload / skill / gear)
+- Enemies spend AP on the same rules
+- `TurnManager` + `WaveSpawner` + Tripo officer GLB
 - Demo mission: Quiet Dock
 
 ## Docs
 
-- **Interactive guide:** open the *Veil Ops Build Guide* canvas in Cursor (slide deck)
-- `docs/HOW_TO_BUILD.txt` — same content as plain text backup
+- `docs/HOW_TO_BUILD.txt` — build steps
 - `docs/DESIGN.md` — fantasy lock
 - `docs/ARCHITECTURE.md` — system map
 - `docs/BEGINNER_GUIDE.txt` — first-run controls
 
-## Art later
+## Art
 
-Swap capsule units for **Tripo** GLB/glTF under `assets/`. Keep systems; replace meshes.
+- Overworld placeholders: `assets/sprites/` (swap for pixel sheets later)
+- Combat officer: `assets/characters/` (Tripo GLB)
 
 ## Archive
 

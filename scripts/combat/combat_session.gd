@@ -1,6 +1,6 @@
 class_name CombatSession
 extends Node3D
-## Owns one fight: waves + turns + OTS camera. Reticle ray decides the target.
+## Owns one fight: AP turns + waves + OTS camera. Reticle ray decides the target.
 
 @onready var turn_manager: TurnManager = $TurnManager
 @onready var wave_spawner: WaveSpawner = $WaveSpawner
@@ -10,10 +10,13 @@ extends Node3D
 @onready var spawn_points_root: Node3D = $EnemySpawnPoints
 @onready var reticle: Control = $CombatUI/CombatReticle
 
+const ENGAGE_RANGE := 9.0
+
 var _player: CombatUnit
 var _encounter: EncounterData
 var _running: bool = false
 var _hovered_enemy: CombatUnit = null
+var _enemy_busy: bool = false
 
 
 func _ready() -> void:
@@ -30,6 +33,7 @@ func _ready() -> void:
 func start_encounter(encounter: EncounterData) -> void:
 	_encounter = encounter
 	_running = true
+	_enemy_busy = false
 	visible = true
 	set_process(true)
 	set_process_input(true)
@@ -59,7 +63,6 @@ func _process(delta: float) -> void:
 	if not _running:
 		return
 
-	## Always update hover under reticle while fighting.
 	_hovered_enemy = _raycast_enemy()
 	if reticle:
 		reticle.set_hot(_hovered_enemy != null)
@@ -69,6 +72,8 @@ func _process(delta: float) -> void:
 		_player.face_aim(camera.get_aim_forward())
 
 	if active == null or active.team != CombatUnit.Team.PLAYER or active != _player:
+		return
+	if _player.ap <= 0:
 		return
 
 	var dir := Vector3.ZERO
@@ -89,7 +94,6 @@ func _input(event: InputEvent) -> void:
 	if not _running:
 		return
 
-	## Use _input (not unhandled) so UI focus cannot eat mouse look.
 	if event is InputEventMouseMotion:
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -113,20 +117,46 @@ func _input(event: InputEvent) -> void:
 			return
 		_player_shoot(active)
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("combat_reload"):
+		active.try_reload()
+		_after_player_action(active)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("combat_skill"):
+		active.try_skill_focus()
+		_after_player_action(active)
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("combat_equipment"):
+		active.try_equipment_stim()
+		_after_player_action(active)
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("combat_end_turn"):
-		turn_manager.notify_action_resolved()
-		_maybe_run_enemy_turns()
+		_end_player_turn()
 		get_viewport().set_input_as_handled()
 
 
 func _player_shoot(player: CombatUnit) -> void:
-	## Only the unit under the reticle can be attacked — no nearest fallback.
 	var target := _raycast_enemy()
 	if target == null:
 		EventBus.log_line.emit("No target under reticle.")
 		return
 	player.face_aim(target.global_position - player.global_position)
-	player.deal_damage_to(target)
+	if player.try_shoot(target):
+		_after_player_action(player)
+
+
+func _after_player_action(player: CombatUnit) -> void:
+	_update_hud_hint()
+	if not _running:
+		return
+	## Empty mag tip.
+	if player.ammo_in_mag <= 0 and player.reserve_ammo > 0 and player.ap >= player.cost_reload:
+		EventBus.log_line.emit("Mag empty — R to reload (%d AP)." % player.cost_reload)
+	if player.ap <= 0:
+		EventBus.log_line.emit("AP spent — ending turn.")
+		_end_player_turn()
+
+
+func _end_player_turn() -> void:
 	turn_manager.notify_action_resolved()
 	_maybe_run_enemy_turns()
 
@@ -168,6 +198,9 @@ func _unit_from_collider(collider: Variant) -> CombatUnit:
 
 
 func _maybe_run_enemy_turns() -> void:
+	if _enemy_busy:
+		return
+	_enemy_busy = true
 	await get_tree().process_frame
 	while _running:
 		var active := turn_manager.get_active_unit()
@@ -176,20 +209,59 @@ func _maybe_run_enemy_turns() -> void:
 		if active.team == CombatUnit.Team.PLAYER:
 			_update_hud_hint()
 			break
-		_enemy_take_turn(active)
+		await _enemy_spend_ap(active)
+		if not _running:
+			break
 		turn_manager.notify_action_resolved()
-		await get_tree().create_timer(0.35).timeout
+		await get_tree().create_timer(0.25).timeout
+	_enemy_busy = false
 
 
-func _enemy_take_turn(enemy: CombatUnit) -> void:
-	var players := turn_manager.living_on_team(CombatUnit.Team.PLAYER)
-	if players.is_empty():
-		_finish(false)
-		return
-	var target := _nearest(enemy.global_position, players)
-	enemy.deal_damage_to(target)
-	if not _player.is_alive:
-		_finish(false)
+func _enemy_spend_ap(enemy: CombatUnit) -> void:
+	var safety := 12
+	while _running and enemy.is_alive and enemy.ap > 0 and safety > 0:
+		safety -= 1
+		var players := turn_manager.living_on_team(CombatUnit.Team.PLAYER)
+		if players.is_empty():
+			_finish(false)
+			return
+		var target := _nearest(enemy.global_position, players)
+		var dist := enemy.global_position.distance_to(target.global_position)
+
+		## Reload if dry.
+		if enemy.ammo_in_mag <= 0:
+			if enemy.can_afford(enemy.cost_reload) and enemy.reserve_ammo > 0:
+				enemy.try_reload()
+				await get_tree().create_timer(0.2).timeout
+				continue
+			break
+
+		## Shoot if in range and can afford.
+		if dist <= ENGAGE_RANGE and enemy.can_afford(enemy.cost_shoot):
+			enemy.face_aim(target.global_position - enemy.global_position)
+			enemy.try_shoot(target)
+			await get_tree().create_timer(0.3).timeout
+			if _player and not _player.is_alive:
+				_finish(false)
+				return
+			## Prefer another shot if AP remains and still in range.
+			continue
+
+		## Close distance.
+		if dist > ENGAGE_RANGE and enemy.ap > 0:
+			var step := mini(2.5, dist - ENGAGE_RANGE + 0.5)
+			if not enemy.try_move_toward(target.global_position, step):
+				break
+			await get_tree().create_timer(0.15).timeout
+			continue
+
+		## Stim if hurt and can't usefully shoot.
+		if enemy.hp <= enemy.max_hp / 2 and enemy.can_afford(enemy.cost_equipment):
+			enemy.try_equipment_stim()
+			await get_tree().create_timer(0.2).timeout
+			continue
+
+		break
 
 
 func _on_wave_spawned(_wave_index: int, units: Array[CombatUnit]) -> void:
@@ -255,4 +327,13 @@ func _nearest(from: Vector3, units: Array[CombatUnit]) -> CombatUnit:
 func _update_hud_hint() -> void:
 	var active := turn_manager.get_active_unit()
 	if active and active.team == CombatUnit.Team.PLAYER:
-		EventBus.log_line.emit("Your turn — WASD move | Mouse aim | LMB shoot reticle target | RMB end turn")
+		EventBus.log_line.emit(
+			"AP %d/%d — WASD move · LMB shoot(%d) · R reload(%d) · Q Focus(%d) · F stim(%d) · RMB end" % [
+				active.ap,
+				active.max_ap,
+				active.cost_shoot,
+				active.cost_reload,
+				active.cost_skill,
+				active.cost_equipment,
+			]
+		)

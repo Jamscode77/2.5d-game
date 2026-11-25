@@ -13,10 +13,10 @@ func _ready() -> void:
 	EventBus.combat_started.connect(_on_combat_started)
 	EventBus.combat_ended.connect(_on_combat_ended)
 	EventBus.wave_started.connect(_on_wave_started)
-	banner.text = "VEIL OPS — scaffold"
+	banner.text = "VEIL OPS — overworld"
 	_on_log("Imperial intelligence network online.")
-	_on_log("Overworld: WASD travel | LMB accept brief / click node | RMB start contact")
-	_on_log("Combat: WASD move | Mouse aim (reticle) | LMB shoot target under reticle | RMB end turn")
+	_on_log("Overworld (sprites): WASD walk | near a pin: E/LMB brief | RMB enter 3D combat")
+	_on_log("Combat (AP): WASD move · LMB shoot · R reload · Q Focus · F stim · RMB end turn")
 
 
 func _on_encounter_requested(encounter: EncounterData, _world_position: Vector3) -> void:

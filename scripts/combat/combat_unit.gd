@@ -1,6 +1,6 @@
 class_name CombatUnit
 extends Node3D
-## Minimal combatant for turn-based OTS fights.
+## Combatant with per-turn action points (move / shoot / reload / skill / gear).
 
 signal defeated(unit: CombatUnit)
 
@@ -10,17 +10,32 @@ enum Team { PLAYER, ENEMY, ALLY }
 @export var team: Team = Team.ENEMY
 @export var max_hp: int = 10
 @export var attack_power: int = 3
-@export var move_range: float = 3.0
 @export var move_speed: float = 4.5
 @export var apply_team_tint: bool = true
 ## Tripo/Mixamo meshes usually face +Z at rest. Keep 0 so +Z points along aim.
 @export var model_yaw_offset: float = 0.0
 @export var face_turn_speed: float = 14.0
 
+@export_group("Action points")
+@export var max_ap: int = 6
+@export var meters_per_ap: float = 1.25
+@export var cost_shoot: int = 2
+@export var cost_reload: int = 2
+@export var cost_skill: int = 3
+@export var cost_equipment: int = 2
+
+@export_group("Weapon")
+@export var magazine_size: int = 3
+@export var reserve_ammo: int = 9
+
 var hp: int = 10
+var ap: int = 0
 var has_acted: bool = false
 var is_alive: bool = true
 var moved_this_turn: bool = false
+var ammo_in_mag: int = 0
+var _move_accum: float = 0.0
+var _focus_bonus: int = 0
 var _face_yaw: float = 0.0
 
 @onready var _mesh: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
@@ -30,6 +45,8 @@ var _face_yaw: float = 0.0
 
 func _ready() -> void:
 	hp = max_hp
+	ap = max_ap
+	ammo_in_mag = magazine_size
 	_apply_team_color()
 	_refresh_label()
 	_ensure_pick_body()
@@ -47,12 +64,30 @@ func _process(delta: float) -> void:
 func begin_turn() -> void:
 	has_acted = false
 	moved_this_turn = false
+	_move_accum = 0.0
+	ap = max_ap
+	_refresh_label()
 	EventBus.turn_started.emit(self)
+	EventBus.log_line.emit("%s turn — %d AP | mag %d/%d" % [display_name, ap, ammo_in_mag, magazine_size])
 
 
 func end_turn() -> void:
 	has_acted = true
+	ap = 0
+	_refresh_label()
 	EventBus.turn_ended.emit(self)
+
+
+func can_afford(cost: int) -> bool:
+	return is_alive and ap >= cost
+
+
+func spend_ap(cost: int) -> bool:
+	if not can_afford(cost):
+		return false
+	ap -= cost
+	_refresh_label()
+	return true
 
 
 func take_damage(amount: int) -> void:
@@ -65,13 +100,6 @@ func take_damage(amount: int) -> void:
 		_die()
 
 
-func deal_damage_to(target: CombatUnit) -> void:
-	if target == null or not target.is_alive:
-		return
-	target.take_damage(attack_power)
-	has_acted = true
-
-
 ## Face the aim direction (mouse / reticle). Mesh +Z aligns with aim.
 func face_aim(aim_forward: Vector3) -> void:
 	var flat := Vector3(aim_forward.x, 0.0, aim_forward.z)
@@ -81,14 +109,114 @@ func face_aim(aim_forward: Vector3) -> void:
 	_face_yaw = atan2(flat.x, flat.z) + model_yaw_offset
 
 
+## Continuous move; burns 1 AP every meters_per_ap traveled.
 func apply_move_input(local_dir: Vector3, delta: float) -> void:
-	if not is_alive or has_acted:
+	if not is_alive or ap <= 0:
 		return
 	if local_dir.length() < 0.01:
 		return
 	var flat := Vector3(local_dir.x, 0.0, local_dir.z).normalized()
-	global_position += flat * move_speed * delta
+	var step := move_speed * delta
+	## Cap step if remaining AP can't cover a full meter chunk.
+	var remaining_budget := float(ap) * meters_per_ap - _move_accum
+	if remaining_budget <= 0.0:
+		return
+	step = minf(step, remaining_budget)
+	global_position += flat * step
 	moved_this_turn = true
+	_move_accum += step
+	while _move_accum >= meters_per_ap and ap > 0:
+		_move_accum -= meters_per_ap
+		ap -= 1
+		_refresh_label()
+
+
+## Discrete step used by enemy AI (returns false if no AP left).
+func try_move_toward(target_pos: Vector3, distance: float) -> bool:
+	if not is_alive or ap <= 0:
+		return false
+	var flat := Vector3(target_pos.x - global_position.x, 0.0, target_pos.z - global_position.z)
+	if flat.length_squared() < 0.0001:
+		return false
+	flat = flat.normalized()
+	var step := minf(distance, float(ap) * meters_per_ap)
+	var cost := maxi(1, int(ceili(step / meters_per_ap)))
+	if not spend_ap(cost):
+		return false
+	global_position += flat * step
+	moved_this_turn = true
+	face_aim(flat)
+	return true
+
+
+func try_shoot(target: CombatUnit) -> bool:
+	if target == null or not target.is_alive:
+		return false
+	if ammo_in_mag <= 0:
+		EventBus.log_line.emit("%s — magazine empty (R reload)." % display_name)
+		return false
+	if not spend_ap(cost_shoot):
+		EventBus.log_line.emit("%s — need %d AP to shoot (have %d)." % [display_name, cost_shoot, ap])
+		return false
+	ammo_in_mag -= 1
+	var dmg := attack_power + _focus_bonus
+	if _focus_bonus > 0:
+		EventBus.log_line.emit("%s fires with Focus (+%d)." % [display_name, _focus_bonus])
+		_focus_bonus = 0
+	target.take_damage(dmg)
+	_refresh_label()
+	return true
+
+
+func try_reload() -> bool:
+	if ammo_in_mag >= magazine_size:
+		EventBus.log_line.emit("%s — mag already full." % display_name)
+		return false
+	if reserve_ammo <= 0:
+		EventBus.log_line.emit("%s — no reserve ammo." % display_name)
+		return false
+	if not spend_ap(cost_reload):
+		EventBus.log_line.emit("%s — need %d AP to reload." % [display_name, cost_reload])
+		return false
+	var need := magazine_size - ammo_in_mag
+	var take := mini(need, reserve_ammo)
+	ammo_in_mag += take
+	reserve_ammo -= take
+	EventBus.log_line.emit("%s reloads (−%d AP). Mag %d/%d · reserve %d" % [
+		display_name, cost_reload, ammo_in_mag, magazine_size, reserve_ammo
+	])
+	_refresh_label()
+	return true
+
+
+## Skill: Focus — next shot deals +2 damage.
+func try_skill_focus() -> bool:
+	if _focus_bonus > 0:
+		EventBus.log_line.emit("%s — Focus already primed." % display_name)
+		return false
+	if not spend_ap(cost_skill):
+		EventBus.log_line.emit("%s — need %d AP for Focus." % [display_name, cost_skill])
+		return false
+	_focus_bonus = 2
+	EventBus.log_line.emit("%s primes Focus (−%d AP). Next shot +2." % [display_name, cost_skill])
+	return true
+
+
+## Equipment: Field stim — restore a little HP.
+func try_equipment_stim() -> bool:
+	if hp >= max_hp:
+		EventBus.log_line.emit("%s — already at full HP." % display_name)
+		return false
+	if not spend_ap(cost_equipment):
+		EventBus.log_line.emit("%s — need %d AP for stim." % [display_name, cost_equipment])
+		return false
+	var healed := mini(3, max_hp - hp)
+	hp += healed
+	EventBus.log_line.emit("%s uses Field Stim (−%d AP). +%d HP → %d/%d" % [
+		display_name, cost_equipment, healed, hp, max_hp
+	])
+	_refresh_label()
+	return true
 
 
 func _die() -> void:
@@ -115,10 +243,14 @@ func _apply_team_color() -> void:
 
 func _refresh_label() -> void:
 	if _label:
-		_label.text = "%s\n%d/%d" % [display_name, hp, max_hp]
+		_label.text = "%s\n%d/%d HP · %d AP\n%d/%d ammo" % [
+			display_name, hp, max_hp, ap, ammo_in_mag, magazine_size
+		]
 
 
 func _ensure_pick_body() -> void:
+	if get_node_or_null("PickBody") != null:
+		return
 	var body := StaticBody3D.new()
 	body.name = "PickBody"
 	body.collision_layer = 2

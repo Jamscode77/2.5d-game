@@ -6,8 +6,8 @@
   What you already have
   ---------------------
   A Godot 4.3 scaffold named Veil Ops:
-    - FF-style node overworld
-    - Over-the-shoulder turn-based combat
+    - FF-style sprite overworld (walk a little operative)
+    - Over-the-shoulder 3D combat with action points
     - Wave spawner
     - Demo mission "Quiet Dock"
 

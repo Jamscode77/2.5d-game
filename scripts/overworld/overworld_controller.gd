@@ -1,14 +1,16 @@
 class_name OverworldController
 extends Node3D
-## FF-style node overworld: WASD travel, mouse select / accept / start combat.
+## FF-style sprite overworld: walk a little operative around, enter 3D combat at pins.
 
 @onready var nodes_root: Node3D = $Nodes
 @onready var traversal_camera: Camera3D = $TraversalCamera
-@onready var cursor: MeshInstance3D = $Cursor
+@onready var player: OverworldPlayer = $OverworldPlayer
+@onready var hint_label: Label3D = $InteractHint
 
 var _node_list: Array[OverworldMapNode] = []
-var _selected: int = 0
+var _nearby: OverworldMapNode = null
 var _busy: bool = false
+var _camera_offset: Vector3 = Vector3(0, 11, 10)
 
 
 func _ready() -> void:
@@ -16,99 +18,112 @@ func _ready() -> void:
 	for child in nodes_root.get_children():
 		if child is OverworldMapNode:
 			_node_list.append(child)
-	_select(0)
 	EventBus.combat_ended.connect(_on_combat_ended)
-	EventBus.log_line.emit("Overworld — WASD: move  |  LMB: accept brief  |  RMB: start contact  |  Click node: select")
+	if hint_label:
+		hint_label.visible = false
+		hint_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	EventBus.log_line.emit("Overworld — WASD: walk sprite  |  E / LMB: brief  |  RMB: start 3D combat when near a pin")
+	_snap_camera()
+
+
+func _process(delta: float) -> void:
+	if not visible or _busy:
+		return
+	_update_nearby()
+	_follow_camera(delta)
+	_update_hint()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not visible or _busy:
 		return
-
-	if event.is_action_pressed("move_left") or event.is_action_pressed("move_back"):
-		_select(_selected - 1)
-	elif event.is_action_pressed("move_right") or event.is_action_pressed("move_forward"):
-		_select(_selected + 1)
-	elif event.is_action_pressed("overworld_accept"):
-		## Click near a node to select it, then accept the brief on that sector.
-		_try_select_node_under_mouse()
-		_accept_mission_at_selection()
+	if event.is_action_pressed("overworld_accept") or event.is_action_pressed("ui_accept"):
+		_accept_mission_nearby()
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("overworld_start_combat"):
-		_start_contact_at_selection()
+		_start_contact_nearby()
+		get_viewport().set_input_as_handled()
 
 
-func _try_select_node_under_mouse() -> bool:
-	var hit: Vector3 = _ray_to_ground()
-	if hit == Vector3.INF:
-		return false
-	var best_i := -1
-	var best_d := 2.5 # meters
-	for i in _node_list.size():
-		var d: float = hit.distance_to(_node_list[i].global_position)
-		if d < best_d:
-			best_d = d
-			best_i = i
-	if best_i >= 0:
-		_select(best_i)
-		return true
-	return false
+func _update_nearby() -> void:
+	_nearby = null
+	var best_d := INF
+	for node in _node_list:
+		if node.is_player_in_range(player):
+			var d := player.global_position.distance_to(node.global_position)
+			if d < best_d:
+				best_d = d
+				_nearby = node
 
 
-func _ray_to_ground() -> Vector3:
-	var mouse := get_viewport().get_mouse_position()
-	var from := traversal_camera.project_ray_origin(mouse)
-	var dir := traversal_camera.project_ray_normal(mouse)
-	if absf(dir.y) < 0.0001:
-		return Vector3.INF
-	var t := -from.y / dir.y
-	if t < 0.0:
-		return Vector3.INF
-	return from + dir * t
-
-
-func _select(index: int) -> void:
-	if _node_list.is_empty():
+func _update_hint() -> void:
+	if hint_label == null:
 		return
-	_selected = wrapi(index, 0, _node_list.size())
-	var node := _node_list[_selected]
-	cursor.global_position = node.global_position + Vector3(0, 1.2, 0)
-	EventBus.log_line.emit("Sector: %s — %s" % [node.display_name, node.blurb])
-
-
-func _accept_mission_at_selection() -> void:
-	var node := _node_list[_selected]
-	if node.mission == null:
-		EventBus.log_line.emit("No active brief at this node.")
+	if _nearby == null:
+		hint_label.visible = false
 		return
-	GameSession.begin_mission(node.mission)
-	EventBus.log_line.emit("Brief filed. RMB when ready to engage.")
+	hint_label.visible = true
+	hint_label.global_position = _nearby.global_position + Vector3(0, 1.8, 0)
+	var can_fight := _nearby.encounter != null or (_nearby.mission != null and _nearby.mission.encounter != null)
+	if can_fight:
+		hint_label.text = "%s\nE brief · RMB fight" % _nearby.display_name
+	else:
+		hint_label.text = "%s\n(no contact)" % _nearby.display_name
 
 
-func _start_contact_at_selection() -> void:
-	var node := _node_list[_selected]
+func _follow_camera(delta: float) -> void:
+	if traversal_camera == null or player == null:
+		return
+	var target := player.global_position + _camera_offset
+	traversal_camera.global_position = traversal_camera.global_position.lerp(target, clampf(6.0 * delta, 0.0, 1.0))
+	traversal_camera.look_at(player.global_position + Vector3(0, 0.4, 0), Vector3.UP)
+
+
+func _snap_camera() -> void:
+	if traversal_camera and player:
+		traversal_camera.global_position = player.global_position + _camera_offset
+		traversal_camera.look_at(player.global_position + Vector3(0, 0.4, 0), Vector3.UP)
+		traversal_camera.current = true
+
+
+func _accept_mission_nearby() -> void:
+	if _nearby == null:
+		EventBus.log_line.emit("Walk to a map pin first.")
+		return
+	if _nearby.mission == null:
+		EventBus.log_line.emit("%s — no active brief." % _nearby.display_name)
+		return
+	GameSession.begin_mission(_nearby.mission)
+	EventBus.log_line.emit("Brief filed: %s. RMB to enter 3D combat." % _nearby.mission.display_name)
+
+
+func _start_contact_nearby() -> void:
+	if _nearby == null:
+		EventBus.log_line.emit("Walk to a hostile pin (red) to engage.")
+		return
 	var encounter: EncounterData = null
-	if node.mission and node.mission.encounter:
-		encounter = node.mission.encounter
-	elif node.encounter:
-		encounter = node.encounter
+	if _nearby.mission and _nearby.mission.encounter:
+		encounter = _nearby.mission.encounter
+	elif _nearby.encounter:
+		encounter = _nearby.encounter
 	if encounter == null:
-		EventBus.log_line.emit("No hostile signature.")
+		EventBus.log_line.emit("No hostile signature here.")
 		return
 
 	_busy = true
 	visible = false
 	var facing := Vector3(0, 0, -1)
-	GameSession.request_encounter(encounter, node.combat_anchor.global_position, facing)
+	GameSession.request_encounter(encounter, _nearby.combat_anchor.global_position, facing)
 
 
 func _on_combat_ended(victory: bool) -> void:
 	_busy = false
 	visible = true
-	traversal_camera.current = true
+	_snap_camera()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	GameSession.return_to_overworld()
 	if victory and GameSession.active_mission:
 		EventBus.mission_completed.emit(GameSession.active_mission.id, true)
 		EventBus.log_line.emit("Debrief: empire standing %d" % GameSession.empire_standing)
 	elif not victory:
-		EventBus.log_line.emit("Extract failed. Regroup on the overworld.")
+		EventBus.log_line.emit("Extract failed. Back on the overworld map.")

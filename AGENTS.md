@@ -3,14 +3,15 @@
 ## Stack
 
 - Godot **4.3+**, GDScript
-- 2.5D overworld → OTS turn-based combat → waves
+- Sprite overworld → OTS **AP-based** turn combat → waves
 - Sci-fi imperial intelligence fantasy (original IP only)
 
 ## Do
 
-- Extend existing `CombatSession`, `TurnManager`, `WaveSpawner`, `OTSCombatCamera`
+- Extend existing `CombatSession`, `TurnManager`, `WaveSpawner`, `OTSCombatCamera`, `CombatUnit` AP helpers
 - Prefer `MissionData` / `EncounterData` resources for content
-- Keep v1 **full turn-based** unless asked for ATB
+- Keep v1 **action-point turn-based** (move / shoot / reload / skill / gear)
+- Overworld uses sprites; combat uses 3D models
 
 ## Don't
 
@@ -20,4 +21,4 @@
 
 ## Playtest slice
 
-Overworld select → Space → waves → F to shoot → return on victory.
+Walk sprite to Dock Spire → RMB combat → spend AP (WASD / LMB / R / Q / F) → RMB end turn → waves → victory returns to overworld.
