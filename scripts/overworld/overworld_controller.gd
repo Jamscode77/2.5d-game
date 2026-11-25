@@ -3,14 +3,13 @@ extends Node3D
 ## FF-style sprite overworld: walk a little operative around, enter 3D combat at pins.
 
 @onready var nodes_root: Node3D = $Nodes
-@onready var traversal_camera: Camera3D = $TraversalCamera
 @onready var player: OverworldPlayer = $OverworldPlayer
+@onready var traversal_camera: Camera3D = $OverworldPlayer/TraversalCamera
 @onready var hint_label: Label3D = $InteractHint
 
 var _node_list: Array[OverworldMapNode] = []
 var _nearby: OverworldMapNode = null
 var _busy: bool = false
-var _camera_offset: Vector3 = Vector3(0, 11, 10)
 
 
 func _ready() -> void:
@@ -23,14 +22,13 @@ func _ready() -> void:
 		hint_label.visible = false
 		hint_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	EventBus.log_line.emit("Overworld — WASD: walk sprite  |  E / LMB: brief  |  RMB: start 3D combat when near a pin")
-	_snap_camera()
+	_activate_camera()
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not visible or _busy:
 		return
 	_update_nearby()
-	_follow_camera(delta)
 	_update_hint()
 
 
@@ -71,18 +69,9 @@ func _update_hint() -> void:
 		hint_label.text = "%s\n(no contact)" % _nearby.display_name
 
 
-func _follow_camera(delta: float) -> void:
-	if traversal_camera == null or player == null:
-		return
-	var target := player.global_position + _camera_offset
-	traversal_camera.global_position = traversal_camera.global_position.lerp(target, clampf(6.0 * delta, 0.0, 1.0))
-	traversal_camera.look_at(player.global_position + Vector3(0, 0.4, 0), Vector3.UP)
-
-
-func _snap_camera() -> void:
-	if traversal_camera and player:
-		traversal_camera.global_position = player.global_position + _camera_offset
-		traversal_camera.look_at(player.global_position + Vector3(0, 0.4, 0), Vector3.UP)
+## Camera is a child of the player with a fixed local pose — world scrolls under it, FF-style.
+func _activate_camera() -> void:
+	if traversal_camera:
 		traversal_camera.current = true
 
 
@@ -119,7 +108,7 @@ func _start_contact_nearby() -> void:
 func _on_combat_ended(victory: bool) -> void:
 	_busy = false
 	visible = true
-	_snap_camera()
+	_activate_camera()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	GameSession.return_to_overworld()
 	if victory and GameSession.active_mission:

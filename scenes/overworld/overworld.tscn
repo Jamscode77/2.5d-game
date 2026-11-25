@@ -26,11 +26,6 @@ albedo_color = Color(0.14, 0.18, 0.22, 1)
 [node name="Overworld" type="Node3D"]
 script = ExtResource("1_ow")
 
-[node name="TraversalCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.74, 0.67, 0, -0.67, 0.74, 0, 11, 10)
-current = true
-fov = 42.0
-
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 8, 0)
 light_energy = 1.05
@@ -56,6 +51,11 @@ shaded = false
 double_sided = true
 texture_filter = 0
 texture = ExtResource("6_player_tex")
+
+[node name="TraversalCamera" type="Camera3D" parent="OverworldPlayer"]
+transform = Transform3D(1, 0, 0, 0, 0.74, 0.67, 0, -0.67, 0.74, 0, 11, 10)
+current = true
+fov = 42.0
 
 [node name="Nodes" type="Node3D" parent="."]
 
